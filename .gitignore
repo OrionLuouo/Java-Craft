@@ -1,0 +1,5 @@
+# 项目排除路径
+/abandoned/
+/out/
+/source/OrionLuouo/Craft/data/container/map/
+/source/OrionLuouo/Craft/io/documents/fs3d_old/

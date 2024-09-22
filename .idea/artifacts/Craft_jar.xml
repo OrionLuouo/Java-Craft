@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="Craft:jar">
+    <output-path>$PROJECT_DIR$/out/jar</output-path>
+    <root id="archive" name="Craft.jar">
+      <element id="module-output" name="Craft" />
+    </root>
+  </artifact>
+</component>

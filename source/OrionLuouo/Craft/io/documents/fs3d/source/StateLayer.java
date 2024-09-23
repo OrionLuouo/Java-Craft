@@ -37,54 +37,18 @@ public class StateLayer {
     void function(int index) {
         unexpected();
     }
+    void token(String token) {
+        unexpected();
+    }
 }
 
-abstract class FunctionInitializerStateLayer extends StateLayer {
-    List<CouplePair<TypeStatement , String>> arguments;
+class HandlerStateLayer extends StateLayer {
 
-    FunctionInitializerStateLayer(DocumentStatement statement) {
+    HandlerStateLayer(DocumentStatement statement) {
         super(statement);
     }
 
-    abstract TypeStatement[] getStandardArguments();
-
-    @Unfinished
-    public void wrongArguments() {
-
-    }
-
-    public void initialize() {
-        
-    }
-
-    @Override
-    public void punctuation(char punctuation) {
-        if (punctuation == '(') {
-            return;
-        }
-        if (punctuation == ',') {
-            return;
-        }
-        if (punctuation == ')') {
-            TypeStatement[] standardArguments = getStandardArguments();
-            Iterator<CouplePair<TypeStatement , String>> iterator = arguments.iterator();
-            for (int index = 0 ; index < standardArguments.length ;) {
-                if (!iterator.hasNext()) {
-                    wrongArguments();
-                }
-                if (iterator.next().valueA() != standardArguments[index++]) {
-                    wrongArguments();
-                }
-            }
-            initialize();
-        }
-        else {
-            unexpected();
-        }
-    }
-
-    @Override
-    public void type(TypeStatement typeStatement) {
-        arguments.add(new CouplePair<>(typeStatement, typeStatement.getType().getName()));
+    public Handler getHandler() {
+        return null;
     }
 }

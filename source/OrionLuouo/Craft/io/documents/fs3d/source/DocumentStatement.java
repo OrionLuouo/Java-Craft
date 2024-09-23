@@ -10,7 +10,6 @@ import OrionLuouo.Craft.system.annotation.Unfinished;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.function.Function;
 
 public class DocumentStatement extends FS3Document implements Statement {
     WordParser wordParser;

@@ -15,6 +15,7 @@ public abstract class AreaLayer extends StateLayer {
     public abstract void logout();
 }
 
+@Unfinished
 class TypeAreaLayer extends AreaLayer {
     TypeStatement type;
 

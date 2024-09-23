@@ -76,7 +76,15 @@ abstract class FunctionInitializerStateLayer extends StateLayer {
                     wrongArguments();
                 }
             }
+            initialize();
         }
+        else {
+            unexpected();
+        }
+    }
 
+    @Override
+    public void type(TypeStatement typeStatement) {
+        arguments.add(new CouplePair<>(typeStatement, typeStatement.getType().getName()));
     }
 }

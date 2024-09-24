@@ -15,8 +15,8 @@ public @interface Unfinished {
 
     String info() default "empty";
 
-    class UnfinishedClassTest {
-        public static void test(String packageName) {
+    class Test {
+        public static void testClasses(String packageName) {
             Set<Class<?>> classes = Classes.getAllClasses(packageName);
             int i = 0;
             for (Class<?> c : classes) {
@@ -30,10 +30,8 @@ public @interface Unfinished {
                     }
             }
         }
-    }
-    class UnfinishedMemberTest {
 
-        public static void test(String packageName) {
+        public static void testMembers(String packageName) {
             Set<Class<?>> classes = Classes.getAllClasses(packageName);
             int ci = 0;
             for (Class<?> c : classes) {
@@ -59,7 +57,7 @@ public @interface Unfinished {
             }
         }
 
-        public static void test(Class<?> c) {
+        public static void testMembers(Class<?> c) {
             Annotation[] annotations = c.getAnnotations();
             Annotation a = null;
             for (Annotation annotation : annotations)

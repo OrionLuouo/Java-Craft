@@ -4,6 +4,7 @@ import OrionLuouo.Craft.data.CouplePair;
 import OrionLuouo.Craft.data.Function;
 import OrionLuouo.Craft.io.documents.fs3d.FS3DObject;
 import OrionLuouo.Craft.io.documents.fs3d.FS3DType;
+import OrionLuouo.Craft.system.annotation.Unfinished;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,12 +19,7 @@ public interface FunctionInstance {
         static int index = 0;
 
         static {
-            register("hidden-final", FunctionInstance.class, new Function<FunctionInitializerStateLayer, DocumentStatement>() {
-                @Override
-                public FunctionInitializerStateLayer process(DocumentStatement argument) {
-                    return new FinalFunctionInstance.FinalFunctionInitializer(argument);
-                }
-            });
+            register("hidden-final", FunctionInstance.class, null);
         }
 
         public static void register(String name , Class<FunctionInstance> function , Function<FunctionInitializerStateLayer , DocumentStatement> initializerSupplier) {
@@ -37,17 +33,6 @@ public interface FunctionInstance {
 }
 
 record FinalFunctionInstance(FS3DObject value) implements FunctionInstance {
-    static class FinalFunctionInitializer extends FunctionInitializerStateLayer {
-        FinalFunctionInitializer(DocumentStatement statement) {
-            super(statement);
-        }
-
-        @Override
-        TypeStatement[] getStandardArguments() {
-            return new TypeStatement[0];
-        }
-    }
-
     @Override
     public FS3DType getType() {
         return value.getType();

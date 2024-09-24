@@ -7,11 +7,23 @@ public class GrammarErrorException extends FS3DException {
         super(message);
     }
 
+    static String elementLocation(Statement statement) {
+        return "\"" + statement.getWord() + '\"' +  "in the sentence " + '\"' + statement.getSentence() + '\"';
+    }
+
+    static String contextLocation(Statement statement) {
+        return "Location: " + statement.getLocation() + '.';
+    }
+
     public static GrammarErrorException invalidElement(Statement statement) {
-        return new GrammarErrorException("Exception-" + FS3DException.GRAMMAR_ERROR_INVALID_ELEMENT + ": Invalid element \"" + statement.getWord() + "\" in the sentence \"" + statement.getSentence() + ".\nLocation: " + statement.getLocation() + '.');
+        return new GrammarErrorException("Exception-" + FS3DException.GRAMMAR_ERROR_INVALID_ELEMENT + ": Invalid element " + elementLocation(statement) + ".\n" + contextLocation(statement));
     }
 
     public static GrammarErrorException unexpectedError(Statement statement) {
-        return new GrammarErrorException("Exception-" + FS3DException.GRAMMAR_ERROR_UNEXPECTED_ERROR + ": Unexpected error." + ".\nLocation: " + statement.getLocation() + ". Sentence: \"" + statement.getSentence() + "\". Word: \"" + statement.getWord() + "\"." );
+        return new GrammarErrorException("Exception-" + FS3DException.GRAMMAR_ERROR_UNEXPECTED_ERROR + ": Unexpected error: " + elementLocation(statement) + ".\n" + contextLocation(statement));
+    }
+
+    public static GrammarErrorException wrongArgument(Statement statement) {
+        return new GrammarErrorException("Exception-" + FS3DException.GRAMMAR_ERROR_WRONG_ARGUMENTS + ": Wrong arguments of the function: " + elementLocation(statement) + ".\n" + contextLocation(statement));
     }
 }

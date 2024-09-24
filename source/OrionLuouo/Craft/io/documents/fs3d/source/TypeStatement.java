@@ -2,10 +2,18 @@ package OrionLuouo.Craft.io.documents.fs3d.source;
 
 import OrionLuouo.Craft.io.documents.fs3d.FS3DType;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class TypeStatement {
     FS3DType type;
+    Map<String , Variable> variableMap;
+    Map<String , TypeStatement> typeMap;
 
     TypeStatement() {
+        type = new CustomedType();
+        variableMap = new HashMap<>();
+        typeMap = new HashMap<>();
     }
 
     TypeStatement(String name) {

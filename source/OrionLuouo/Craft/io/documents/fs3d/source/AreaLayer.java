@@ -1,10 +1,10 @@
 package OrionLuouo.Craft.io.documents.fs3d.source;
 
+import OrionLuouo.Craft.io.documents.fs3d.FS3DType;
 import OrionLuouo.Craft.io.documents.fs3d.source.exception.GrammarErrorException;
 import OrionLuouo.Craft.system.annotation.Unfinished;
 
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 public abstract class AreaLayer extends StateLayer {
     AreaLayer(DocumentStatement statement) {
@@ -15,33 +15,71 @@ public abstract class AreaLayer extends StateLayer {
     public abstract void logout();
 }
 
-@Unfinished()
+@Unfinished(state = "Parsers not complete yet.")
 class TypeAreaLayer extends AreaLayer {
     TypeStatement type;
+    Map<String , Variable> conflictedVariables;
+    Map<String , TypeStatement> conflictedTypes;
 
     TypeAreaLayer(DocumentStatement statement , TypeStatement type) {
         super(statement);
         this.type = type;
+        conflictedVariables = new HashMap<>();
+        conflictedTypes = new HashMap<>();
+        Set<Map.Entry<String , Variable>> variableSet = statement.variables.entrySet();
+        for (Map.Entry<String , Variable> entry : type.variableMap.entrySet()) {
+            if (statement.variables.containsKey(entry.getKey())) {
+                conflictedVariables.put(entry.getKey(), statement.variables.get(entry.getKey()));
+                statement.variables.put(entry.getKey(), Variable.CONFLICTED_VARIABLE);
+            }
+            else {
+                variableSet.add(entry);
+            }
+        }
+        Set<Map.Entry<String , TypeStatement>> typeSet = statement.types.entrySet();
+        for (Map.Entry<String , TypeStatement> entry : typeSet) {
+            if (statement.types.containsKey(entry.getKey())) {
+                conflictedTypes.put(entry.getKey(), statement.types.get(entry.getKey()));
+                statement.types.put(entry.getKey() , CustomedType.CONFLICTED_TYPE);
+            }
+            else {
+                typeSet.add(entry);
+            }
+        }
     }
 
     @Override
     public void reload() {
-
     }
 
     @Override
     public void logout() {
+        for (String key : type.variableMap.keySet()) {
+            documentStatement.variables.remove(key);
+        }
+        for (String key : type.typeMap.keySet()) {
+            documentStatement.types.remove(key);
+        }
+        documentStatement.variables.putAll(conflictedVariables);
+        documentStatement.types.putAll(conflictedTypes);
+    }
 
+    @Override
+    public void keyword(int index) {
+        switch (index) {
+
+        }
     }
 }
 
 abstract class FunctionInitializerStateLayer extends AreaLayer {
     List<Handler> arguments;
-
+    FunctionInstance functionInstance;
     HandlerStateLayer handler;
 
     FunctionInitializerStateLayer(DocumentStatement statement) {
         super(statement);
+        statement.stateNow = "Initialing function.";
     }
 
     abstract TypeStatement[] getStandardArguments();
@@ -51,11 +89,11 @@ abstract class FunctionInitializerStateLayer extends AreaLayer {
         arguments.add(handler.getHandler());
     }
 
-    @Unfinished
     public void wrongArguments() {
+        throw GrammarErrorException.wrongArgument(documentStatement);
     }
 
-    public abstract void initialize();
+    public abstract FunctionInstance initialize();
 
     @Override
     public void punctuation(char punctuation) {
@@ -76,7 +114,8 @@ abstract class FunctionInitializerStateLayer extends AreaLayer {
                     wrongArguments();
                 }
             }
-            initialize();
+            functionInstance = initialize();
+            documentStatement.retractLayer();
         }
         else {
             throw GrammarErrorException.unexpectedError(documentStatement);
@@ -90,21 +129,21 @@ abstract class FunctionInitializerStateLayer extends AreaLayer {
 
     @Override
     public void type(TypeStatement typeStatement) {
-
+        (documentStatement.currentLayer = new HandlerStateLayer(documentStatement)).type(typeStatement);
     }
 
     @Override
     public void variable(Variable variable) {
-
+        (documentStatement.currentLayer = new HandlerStateLayer(documentStatement)).variable(variable);
     }
 
     @Override
     public void function(int index) {
-
+        (documentStatement.currentLayer = new HandlerStateLayer(documentStatement)).function(index);
     }
 
     @Override
     public void token(String token) {
-
+        (documentStatement.currentLayer = new HandlerStateLayer(documentStatement)).token(token);
     }
 }

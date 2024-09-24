@@ -1,5 +1,6 @@
 package OrionLuouo.Craft.io.documents.fs3d.source;
 
+import OrionLuouo.Craft.data.CouplePair;
 import OrionLuouo.Craft.io.documents.fs3d.FS3DObject;
 import OrionLuouo.Craft.io.documents.fs3d.FS3DType;
 
@@ -60,5 +61,32 @@ public class ArrayType implements FS3DType {
     @Override
     public boolean isBasicType() {
         return false;
+    }
+
+    @Override
+    public int getFieldIndex(String name) {
+        return name.equals("value") ? 0 : -1;
+    }
+
+    @Override
+    public Iterator<CouplePair<String, FS3DType>> getFieldIterator() {
+        final ArrayType type = this;
+        return new Iterator<CouplePair<String, FS3DType>>() {
+            boolean got = false;
+
+            @Override
+            public boolean hasNext() {
+                return !got;
+            }
+
+            @Override
+            public CouplePair<String, FS3DType> next() {
+                if (got) {
+                    return null;
+                }
+                got = true;
+                return new CouplePair<>("value" , type);
+            }
+        };
     }
 }

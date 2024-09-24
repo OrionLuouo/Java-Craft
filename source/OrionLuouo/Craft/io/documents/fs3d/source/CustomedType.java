@@ -9,6 +9,88 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class CustomedType implements FS3DType {
+    public static final FinalTypeStatement CONFLICTED_TYPE = new FinalTypeStatement() {
+        @Override
+        public boolean isParentOf(FS3DType type) {
+            return false;
+        }
+
+        @Override
+        public String getName() {
+            return "$conflictedType";
+        }
+
+        @Override
+        public FS3DType[] getParents() {
+            return new FS3DType[0];
+        }
+
+        @Override
+        public FS3DType[] getInternalTypes() {
+            return new FS3DType[0];
+        }
+
+        @Override
+        public int areaSize() {
+            return 0;
+        }
+
+        @Override
+        public Iterator<FS3DObject> areaIterator() {
+            return new Iterator<FS3DObject>() {
+                @Override
+                public boolean hasNext() {
+                    return false;
+                }
+
+                @Override
+                public FS3DObject next() {
+                    return null;
+                }
+            };
+        }
+
+        @Override
+        public FS3DType getArrayType() {
+            return this;
+        }
+
+        @Override
+        public FS3DType getElementType() {
+            return this;
+        }
+
+        @Override
+        public boolean isArrayType() {
+            return false;
+        }
+
+        @Override
+        public boolean isBasicType() {
+            return false;
+        }
+
+        @Override
+        public int getFieldIndex(String name) {
+            return -1;
+        }
+
+        @Override
+        public Iterator<CouplePair<String, FS3DType>> getFieldIterator() {
+            return new Iterator<CouplePair<String, FS3DType>>() {
+                @Override
+                public boolean hasNext() {
+                    return false;
+                }
+
+                @Override
+                public CouplePair<String, FS3DType> next() {
+                    return null;
+                }
+            };
+        }
+    };
+
     record Field(FS3DType type , int index) {
     }
 

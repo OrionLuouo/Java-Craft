@@ -7,6 +7,7 @@ import OrionLuouo.Craft.io.documents.fs3d.FS3Document;
 import OrionLuouo.Craft.io.documents.fs3d.source.exception.Statement;
 import OrionLuouo.Craft.system.annotation.Unfinished;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
@@ -24,9 +25,8 @@ public class DocumentStatement extends FS3Document implements Statement {
     StateLayer currentLayer;
     Map<String , Variable> variables;
     Map<String , TypeStatement> types;
-    TypeStatement thisType;
     TypeStatement rootTypeState;
-
+    TypeStatement thisType;
 
     public DocumentStatement() {
         super();
@@ -101,6 +101,9 @@ public class DocumentStatement extends FS3Document implements Statement {
         stateNow = "";
         layersStack = new LinkedList<>();
         currentLayer = currentAreaLayer = new TypeAreaLayer(this , rootTypeState);
+        variables = new HashMap<>();
+        types = new HashMap<>();
+        thisType = rootTypeState;
     }
 
     protected void retractLayer() {

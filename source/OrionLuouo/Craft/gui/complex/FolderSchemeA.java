@@ -2,7 +2,6 @@ package OrionLuouo.Craft.gui.complex;
 
 import OrionLuouo.Craft.data.Iterator;
 import OrionLuouo.Craft.data.Processor;
-import OrionLuouo.Craft.data.container.map.DictionaryMap;
 import OrionLuouo.Craft.gui.graphics.Colors;
 import OrionLuouo.Craft.gui.listener.mouseListener.DoubleClickedListener;
 
@@ -11,10 +10,12 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Map;
 
 public class FolderSchemeA {
+    /** deleted an important component by mistake : DictionaryMap<V>
     public static final ImageIcon DEFAULT_FOLDER_IMAGE = null
             , DEFAULT_ITEM_IMAGE = null;
     public static final int DEFAULT_ITEM_SIZE = 20
@@ -134,7 +135,7 @@ public class FolderSchemeA {
 
         public Folder(String text) {
             super(text , types.get("Folder"));
-            contentList = new DictionaryMap();
+            contentList = new Dictionary<>();
             event = FOLDER_EVENT;
         }
 
@@ -459,5 +460,5 @@ public class FolderSchemeA {
 
     public void setFont(Font font) {
 
-    }
+    }*/
 }

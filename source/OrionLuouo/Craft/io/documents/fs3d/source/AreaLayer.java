@@ -67,7 +67,12 @@ class TypeAreaLayer extends AreaLayer {
     @Override
     public void keyword(int index) {
         switch (index) {
+            case GrammarParser.INDEX_TYPE -> {
+                documentStatement.newLayer(new PreTypeInitialingAreaLayer(documentStatement));
+            }
+            case GrammarParser.INDEX_GROUP -> {
 
+            }
         }
     }
 }
@@ -90,7 +95,7 @@ abstract class FunctionInitializerStateLayer extends AreaLayer {
     }
 
     public void wrongArguments() {
-        throw GrammarErrorException.wrongArgument(documentStatement);
+        GrammarErrorException.wrongArgument(documentStatement);
     }
 
     public abstract FunctionInstance initialize();
@@ -118,7 +123,7 @@ abstract class FunctionInitializerStateLayer extends AreaLayer {
             documentStatement.retractLayer();
         }
         else {
-            throw GrammarErrorException.unexpectedError(documentStatement);
+            GrammarErrorException.unexpectedError(documentStatement);
         }
     }
 
@@ -145,5 +150,123 @@ abstract class FunctionInitializerStateLayer extends AreaLayer {
     @Override
     public void token(String token) {
         (documentStatement.currentLayer = new HandlerStateLayer(documentStatement)).token(token);
+    }
+}
+
+class TypeArgumentParserAreaLayer extends AreaLayer {
+    TypeStatement typeStatement;
+    CustomedType customedType;
+    boolean commaed;
+    TypeStatement argumentType;
+    int index;
+    Map.Entry<String, CustomedType.Field> entry;
+    Set<Map.Entry<String, CustomedType.Field>> set;
+    HandlerStateLayer handler;
+    Map<Integer , Handler> fieldDefaultValues;
+
+    public TypeArgumentParserAreaLayer(DocumentStatement statement, TypeStatement typeStatement) {
+        super(statement);
+        this.typeStatement = typeStatement;
+        customedType = (CustomedType) typeStatement.type;
+        set = customedType.fields.entrySet();
+        fieldDefaultValues = new HashMap<>();
+    }
+
+    @Override
+    public void punctuation(char punctuation) {
+        switch (punctuation) {
+            case ',' -> {
+                if (commaed || argumentType == null) {
+                    GrammarErrorException.invalidElement(documentStatement);
+                }
+                commaed = true;
+                set.add(entry);
+                entry = null;
+            }
+            case '=' -> {
+                if (entry == null) {
+                    unexpected();
+                }
+                documentStatement.newLayer(handler = new HandlerStateLayer(documentStatement));
+            }
+            case '>' -> {
+                if (argumentType != null || commaed || entry != null) {
+                    unexpected();
+                }
+                documentStatement.replaceLayer(new ExtendsTypesAreaLayer(documentStatement));
+            }
+        }
+    }
+
+    @Override
+    public void type(TypeStatement typeStatement) {
+        if (!commaed || argumentType != null) {
+            GrammarErrorException.invalidElement(documentStatement);
+        }
+        argumentType = typeStatement;
+    }
+
+    @Override
+    public void newIdentifier(String identifier) {
+        if (commaed || argumentType == null) {
+            unexpected();
+        }
+        entry = new AbstractMap.SimpleEntry<>(identifier , new CustomedType.Field(argumentType.type , index++));
+        argumentType = null;
+    }
+
+    @Override
+    public void reload() {
+        set.add(entry);
+        fieldDefaultValues.put(index++ , handler.getHandler());
+        entry = null;
+        handler = null;
+    }
+
+    @Override
+    public void logout() {
+    }
+}
+
+class ExtendsTypesAreaLayer extends AreaLayer {
+    TypeStatement extendedType;
+    TemporarySetDefaultValueLayer temporarySetDefaultValueLayer;
+
+    public ExtendsTypesAreaLayer(DocumentStatement statement) {
+        super(statement);
+        temporarySetDefaultValueLayer = new TemporarySetDefaultValueLayer(statement);
+    }
+
+    @Override
+    public void reload() {
+    }
+
+    @Override
+    public void logout() {
+    }
+
+    @Override
+    public void punctuation(char punctuation) {
+        switch (punctuation) {
+            case '<' -> {
+                documentStatement.coverLayer(temporarySetDefaultValueLayer);
+            }
+        }
+    }
+}
+
+class TemporarySetDefaultValueLayer extends AreaLayer {
+    public TemporarySetDefaultValueLayer(DocumentStatement statement) {
+        super(statement);
+    }
+
+    @Override
+    public void reload() {
+
+    }
+
+    @Override
+    public void logout() {
+
     }
 }

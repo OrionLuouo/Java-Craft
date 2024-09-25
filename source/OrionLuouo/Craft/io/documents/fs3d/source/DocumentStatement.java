@@ -27,6 +27,8 @@ public class DocumentStatement extends FS3Document implements Statement {
     Map<String , TypeStatement> types;
     TypeStatement rootTypeState;
     TypeStatement thisType;
+    Handler[] fieldDefaultValues;
+    Map<FS3DType , TypeStatement> typeStatementMap;
 
     public DocumentStatement() {
         super();
@@ -104,6 +106,7 @@ public class DocumentStatement extends FS3Document implements Statement {
         variables = new HashMap<>();
         types = new HashMap<>();
         thisType = rootTypeState;
+        typeStatementMap = new HashMap<>();
     }
 
     protected void retractLayer() {
@@ -115,6 +118,20 @@ public class DocumentStatement extends FS3Document implements Statement {
     protected void coverLayer(AreaLayer layer) {
         layersStack.push(currentAreaLayer);
         currentLayer = currentAreaLayer = layer;
+    }
+
+    protected void newLayer(StateLayer layer) {
+        if (currentAreaLayer == currentLayer) {
+            layersStack.push(currentAreaLayer);
+        }
+        currentLayer = layer;
+    }
+
+    protected void replaceLayer(AreaLayer layer) {
+        if (currentAreaLayer == currentLayer) {
+            currentAreaLayer = layer;
+        }
+        currentLayer = layer;
     }
 
     public void input(char c) {

@@ -8,6 +8,8 @@ import OrionLuouo.Craft.system.annotation.Unfinished;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class StateLayer {
     DocumentStatement documentStatement;
@@ -17,7 +19,7 @@ public class StateLayer {
     }
 
     void unexpected() {
-        throw GrammarErrorException.unexpectedError(documentStatement);
+        GrammarErrorException.unexpectedError(documentStatement);
     }
     void punctuation(char punctuation) {
         unexpected();
@@ -42,6 +44,7 @@ public class StateLayer {
     }
 }
 
+@Unfinished
 class HandlerStateLayer extends StateLayer {
 
     HandlerStateLayer(DocumentStatement statement) {
@@ -50,5 +53,35 @@ class HandlerStateLayer extends StateLayer {
 
     public Handler getHandler() {
         return null;
+    }
+}
+
+class PreTypeInitialingAreaLayer extends StateLayer {
+
+    PreTypeInitialingAreaLayer(DocumentStatement statement) {
+        super(statement);
+    }
+
+    @Override
+    public void newIdentifier(String identifier) {
+        documentStatement.newLayer(new PreTypeArgumentParserAreaLayer(documentStatement , identifier));
+    }
+}
+
+class PreTypeArgumentParserAreaLayer extends StateLayer {
+    String name;
+
+    PreTypeArgumentParserAreaLayer(DocumentStatement statement , String name) {
+        super(statement);
+        this.name = name;
+    }
+
+    @Override
+    public void punctuation(char punctuation) {
+        if (punctuation == '<') {
+            TypeStatement statement = new TypeStatement(name);
+            documentStatement.typeStatementMap.put(statement.type , statement);
+            documentStatement.newLayer(new TypeArgumentParserAreaLayer(documentStatement , statement));
+        }
     }
 }

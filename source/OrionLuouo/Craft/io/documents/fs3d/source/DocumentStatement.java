@@ -27,7 +27,6 @@ public class DocumentStatement extends FS3Document implements Statement {
     Map<String , TypeStatement> types;
     TypeStatement rootTypeState;
     TypeStatement thisType;
-    Handler[] fieldDefaultValues;
     Map<FS3DType , TypeStatement> typeStatementMap;
 
     public DocumentStatement() {

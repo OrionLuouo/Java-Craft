@@ -44,18 +44,6 @@ public class StateLayer {
     }
 }
 
-@Unfinished
-class HandlerStateLayer extends StateLayer {
-
-    HandlerStateLayer(DocumentStatement statement) {
-        super(statement);
-    }
-
-    public Handler getHandler() {
-        return null;
-    }
-}
-
 class PreTypeInitialingAreaLayer extends StateLayer {
 
     PreTypeInitialingAreaLayer(DocumentStatement statement) {

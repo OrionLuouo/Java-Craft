@@ -37,12 +37,16 @@ public class GrammarParser {
         KEYWORDS.put("float" , INDEX_FLOAT);
         KEYWORDS.put("boolean" , INDEX_BOOLEAN);
         KEYWORDS.put("bool" , INDEX_BOOLEAN);
-        KEYWORDS.put("char" , INDEX_CHARACTER);
-        KEYWORDS.put("character" , INDEX_CHARACTER);
+        //KEYWORDS.put("char" , INDEX_CHARACTER);
+        //KEYWORDS.put("character" , INDEX_CHARACTER);
         KEYWORDS.put("string" , INDEX_STRING);
         KEYWORDS.put("date" , INDEX_DATE);
         KEYWORDS.put("timestamp" , INDEX_TIME_STAMP);
-        KEYWORDS.put("byte" , INDEX_BYTE);
+        //KEYWORDS.put("byte" , INDEX_BYTE);
+        /*
+          Abandoned some data types.
+          Maybe remake it someday.
+         */
     }
 
     DocumentStatement documentStatement;
@@ -69,7 +73,12 @@ public class GrammarParser {
             documentStatement.currentLayer.variable((Variable) cache);
             return;
         }
-        documentStatement.currentLayer.newIdentifier(word);
+        if (word.matches("[a-zA-Z][a-zA-Z0-9_]*]")) {
+            documentStatement.currentLayer.newIdentifier(word);
+        }
+        else {
+            documentStatement.currentLayer.token(word);
+        }
     }
 
     void input(char punctuation) {

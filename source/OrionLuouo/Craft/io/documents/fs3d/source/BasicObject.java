@@ -11,6 +11,10 @@ public abstract class BasicObject implements FS3DObject {
 class IntegerObject extends BasicObject {
     int value;
 
+    public IntegerObject(int value) {
+        this.value = value;
+    }
+
     @Override
     public FS3DType getType() {
         return FS3DType.BASIC_TYPE_INTEGER;
@@ -24,6 +28,10 @@ class IntegerObject extends BasicObject {
 
 class FloatObject extends BasicObject {
     float value;
+
+    public FloatObject(float value) {
+        this.value = value;
+    }
 
     @Override
     public FS3DType getType() {
@@ -39,6 +47,10 @@ class FloatObject extends BasicObject {
 class DateObject extends BasicObject {
     Date value;
 
+    public DateObject(Date value) {
+        this.value = value;
+    }
+
     @Override
     public FS3DType getType() {
         return FS3DType.BASIC_TYPE_DATE;
@@ -53,6 +65,10 @@ class DateObject extends BasicObject {
 class StringObject extends BasicObject {
     String value;
 
+    public StringObject(String value) {
+        this.value = value;
+    }
+
     @Override
     public FS3DType getType() {
         return FS3DType.BASIC_TYPE_STRING;
@@ -66,6 +82,10 @@ class StringObject extends BasicObject {
 
 class ByteObject extends BasicObject {
     byte value;
+
+    public ByteObject(byte value) {
+        this.value = value;
+    }
 
     @Override
     public FS3DType getType() {
@@ -86,6 +106,10 @@ class ByteObject extends BasicObject {
 class CharacterObject extends BasicObject {
     char value;
 
+    public CharacterObject(char value) {
+        this.value = value;
+    }
+
     @Override
     public FS3DType getType() {
         return FS3DType.BASIC_TYPE_CHARACTER;
@@ -105,6 +129,10 @@ class CharacterObject extends BasicObject {
 class BooleanObject extends BasicObject {
     boolean value;
 
+    public BooleanObject(boolean value) {
+        this.value = value;
+    }
+
     @Override
     public FS3DType getType() {
         return FS3DType.BASIC_TYPE_BOOLEAN;
@@ -112,6 +140,24 @@ class BooleanObject extends BasicObject {
 
     @Override
     public boolean toBoolean() {
+        return value;
+    }
+}
+
+class TimestampObject extends BasicObject {
+    long value;
+
+    public TimestampObject(long value) {
+        this.value = value;
+    }
+
+    @Override
+    public FS3DType getType() {
+        return FS3DType.BASIC_TYPE_TIMESTAMP;
+    }
+
+    @Override
+    public long toTimestamp() {
         return value;
     }
 }

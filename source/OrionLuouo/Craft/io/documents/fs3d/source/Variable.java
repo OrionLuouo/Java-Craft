@@ -22,3 +22,22 @@ public interface Variable {
         assignValue(functionInstance.invoke(null));
     }
 }
+
+class FunctionVariable implements Variable {
+    FunctionInstance functionInstance;
+
+    @Override
+    public FS3DType getType() {
+        return null;
+    }
+
+    @Override
+    public void assignValue(FS3DObject value) {
+        functionInstance = new FinalFunctionInstance(value);
+    }
+
+    @Override
+    public void assignFunctionInstance(FunctionInstance functionInstance) {
+        this.functionInstance = functionInstance;
+    }
+}

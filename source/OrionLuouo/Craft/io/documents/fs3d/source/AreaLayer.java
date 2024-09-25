@@ -80,7 +80,7 @@ class TypeAreaLayer extends AreaLayer {
 abstract class FunctionInitializerStateLayer extends AreaLayer {
     List<Handler> arguments;
     FunctionInstance functionInstance;
-    HandlerStateLayer handler;
+    HandlerAreaLayer handler;
 
     FunctionInitializerStateLayer(DocumentStatement statement) {
         super(statement);
@@ -129,27 +129,60 @@ abstract class FunctionInitializerStateLayer extends AreaLayer {
 
     @Override
     public void keyword(int index) {
-        (documentStatement.currentLayer = new HandlerStateLayer(documentStatement)).keyword(index);
+        handler = new HandlerAreaLayer(documentStatement);
+        handler.keyword(index);
+        documentStatement.coverLayer(handler);
     }
 
     @Override
     public void type(TypeStatement typeStatement) {
-        (documentStatement.currentLayer = new HandlerStateLayer(documentStatement)).type(typeStatement);
+        handler = new HandlerAreaLayer(documentStatement);
+        handler.type(typeStatement);
+        documentStatement.coverLayer(handler);
     }
 
     @Override
     public void variable(Variable variable) {
-        (documentStatement.currentLayer = new HandlerStateLayer(documentStatement)).variable(variable);
+        handler = new HandlerAreaLayer(documentStatement);
+        handler.variable(variable);
+        documentStatement.coverLayer(handler);
     }
 
     @Override
     public void function(int index) {
-        (documentStatement.currentLayer = new HandlerStateLayer(documentStatement)).function(index);
+        handler = new HandlerAreaLayer(documentStatement);
+        handler.function(index);
+        documentStatement.coverLayer(handler);
     }
 
     @Override
     public void token(String token) {
-        (documentStatement.currentLayer = new HandlerStateLayer(documentStatement)).token(token);
+        handler = new HandlerAreaLayer(documentStatement);
+        handler.token(token);
+        documentStatement.coverLayer(handler);
+    }
+}
+
+@Unfinished
+class HandlerAreaLayer extends AreaLayer {
+    HandlerAreaLayer handlerAreaLayer;
+
+    HandlerAreaLayer(DocumentStatement statement) {
+        super(statement);
+    }
+
+    @Override
+    public void reload() {
+
+    }
+
+    @Override
+    public void logout() {
+
+    }
+
+    public Handler getHandler() {
+        return null;
     }
 }
 
@@ -161,7 +194,7 @@ class TypeArgumentParserAreaLayer extends AreaLayer {
     int index;
     Map.Entry<String, CustomedType.Field> entry;
     Set<Map.Entry<String, CustomedType.Field>> set;
-    HandlerStateLayer handler;
+    HandlerAreaLayer handler;
     Map<Integer , Handler> fieldDefaultValues;
 
     public TypeArgumentParserAreaLayer(DocumentStatement statement, TypeStatement typeStatement) {
@@ -187,7 +220,7 @@ class TypeArgumentParserAreaLayer extends AreaLayer {
                 if (entry == null) {
                     unexpected();
                 }
-                documentStatement.newLayer(handler = new HandlerStateLayer(documentStatement));
+                documentStatement.newLayer(handler = new HandlerAreaLayer(documentStatement));
             }
             case '>' -> {
                 if (argumentType != null || commaed || entry != null) {
@@ -235,11 +268,12 @@ class ExtendsTypesAreaLayer extends AreaLayer {
     TemporarySetDefaultValueLayer temporarySetDefaultValueLayer;
     List<FS3DType> parents;
 
+
     public ExtendsTypesAreaLayer(DocumentStatement statement , TypeStatement typeStatement , TypeArgumentParserAreaLayer typeArgumentParserAreaLayer) {
         super(statement);
         this.typeStatement = typeStatement;
         this.typeArgumentParserAreaLayer = typeArgumentParserAreaLayer;
-        temporarySetDefaultValueLayer = new TemporarySetDefaultValueLayer(statement , typeStatement);
+        temporarySetDefaultValueLayer = new TemporarySetDefaultValueLayer(statement , typeStatement , typeArgumentParserAreaLayer);
         parents = new LinkedList<>();
     }
 
@@ -247,8 +281,21 @@ class ExtendsTypesAreaLayer extends AreaLayer {
     public void reload() {
     }
 
+    /**
+     * To finish the construction of the type object.
+     */
     @Override
     public void logout() {
+        CustomedType type = ((CustomedType) typeStatement.type);
+        type.parents = new FS3DType[parents.size()];
+        Iterator<FS3DType> iterator = parents.iterator();
+        for (int index = 0 ; index < parents.size() ;) {
+            type.parents[index++] = iterator.next();
+        }
+        typeStatement.fieldDefaultValues = new Handler[typeArgumentParserAreaLayer.fieldDefaultValues.size()];
+        for (var entry : typeArgumentParserAreaLayer.fieldDefaultValues.entrySet()) {
+            typeStatement.fieldDefaultValues[entry.getKey()] = entry.getValue();
+        }
     }
 
     @Override
@@ -258,32 +305,89 @@ class ExtendsTypesAreaLayer extends AreaLayer {
                 temporarySetDefaultValueLayer.extendedType = extendedType;
                 documentStatement.coverLayer(temporarySetDefaultValueLayer);
             }
-
+            case ',' -> {
+                typeArgumentParserAreaLayer.set.addAll(((CustomedType) extendedType.type).fields.entrySet());
+                extendedType = null;
+            }
+            case '{' -> {
+                documentStatement.retractLayer();
+            }
         }
     }
 
     @Override
     public void type(TypeStatement typeStatement) {
         extendedType = typeStatement;
+        parents.add(typeStatement.type);
+        int fieldIndex = typeArgumentParserAreaLayer.index - 2;
+        for (int index = 0 ; index < typeStatement.fieldDefaultValues.length ;) {
+            if (typeStatement.fieldDefaultValues[index++] != null) {
+                typeArgumentParserAreaLayer.fieldDefaultValues.put(index + fieldIndex , typeStatement.fieldDefaultValues[index]);
+            }
+        }
     }
 }
 
-class TemporarySetDefaultValueLayer extends AreaLayer {
+class TemporarySetDefaultValueLayer extends TypeAreaLayer {
     TypeStatement typeStatement;
     TypeStatement extendedType;
+    FS3DType parent;
+    TypeArgumentParserAreaLayer typeArgumentParserAreaLayer;
+    int index;
+    HandlerAreaLayer handler;
 
-    public TemporarySetDefaultValueLayer(DocumentStatement statement , TypeStatement typeStatement) {
-        super(statement);
+    public TemporarySetDefaultValueLayer(DocumentStatement statement , TypeStatement typeStatement , TypeArgumentParserAreaLayer typeArgumentParserAreaLayer) {
+        super(statement , typeStatement);
         this.typeStatement = typeStatement;
+        this.typeArgumentParserAreaLayer = typeArgumentParserAreaLayer;
+        parent = extendedType.type;
+    }
+
+    @Override
+    public void variable(Variable variable) {
+        try {
+            String variableName = (String) documentStatement.wordNow;
+            if ((index = parent.getFieldIndex(variableName)) != -1) {
+                index += typeArgumentParserAreaLayer.set.size();
+            }
+        } catch (Exception e) {
+            GrammarErrorException.unexpectedError(documentStatement);
+        }
+    }
+
+    @Override
+    public void punctuation(char punctuation) {
+        switch (punctuation) {
+            case '=' -> {
+                if (index == 0) {
+                    GrammarErrorException.invalidElement(documentStatement);
+                }
+                documentStatement.coverLayer(handler = new HandlerAreaLayer(documentStatement));
+            }
+            case ',' -> {
+                if (index != 0) {
+                    GrammarErrorException.invalidElement(documentStatement);
+                }
+                handler = null;
+            }
+            case '>' -> {
+                if (index != 0) {
+                    GrammarErrorException.invalidElement(documentStatement);
+                }
+                documentStatement.retractLayer();
+            }
+        }
     }
 
     @Override
     public void reload() {
-
+        super.reload();
+        typeArgumentParserAreaLayer.fieldDefaultValues.put(index , handler.getHandler());
+        index = 0;
     }
 
     @Override
     public void logout() {
-
+        super.logout();
     }
 }

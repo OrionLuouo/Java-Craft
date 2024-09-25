@@ -193,7 +193,7 @@ class TypeArgumentParserAreaLayer extends AreaLayer {
                 if (argumentType != null || commaed || entry != null) {
                     unexpected();
                 }
-                documentStatement.replaceLayer(new ExtendsTypesAreaLayer(documentStatement));
+                documentStatement.replaceLayer(new ExtendsTypesAreaLayer(documentStatement , typeStatement));
             }
         }
     }
@@ -229,12 +229,16 @@ class TypeArgumentParserAreaLayer extends AreaLayer {
 }
 
 class ExtendsTypesAreaLayer extends AreaLayer {
+    TypeStatement typeStatement;
     TypeStatement extendedType;
     TemporarySetDefaultValueLayer temporarySetDefaultValueLayer;
+    List<FS3DType> parents;
 
-    public ExtendsTypesAreaLayer(DocumentStatement statement) {
+    public ExtendsTypesAreaLayer(DocumentStatement statement , TypeStatement typeStatement) {
         super(statement);
-        temporarySetDefaultValueLayer = new TemporarySetDefaultValueLayer(statement);
+        this.typeStatement = typeStatement;
+        temporarySetDefaultValueLayer = new TemporarySetDefaultValueLayer(statement , typeStatement);
+        parents = new LinkedList<>();
     }
 
     @Override
@@ -251,13 +255,17 @@ class ExtendsTypesAreaLayer extends AreaLayer {
             case '<' -> {
                 documentStatement.coverLayer(temporarySetDefaultValueLayer);
             }
+
         }
     }
 }
 
 class TemporarySetDefaultValueLayer extends AreaLayer {
-    public TemporarySetDefaultValueLayer(DocumentStatement statement) {
+    TypeStatement typeStatement;
+
+    public TemporarySetDefaultValueLayer(DocumentStatement statement , TypeStatement typeStatement) {
         super(statement);
+        this.typeStatement = typeStatement;
     }
 
     @Override

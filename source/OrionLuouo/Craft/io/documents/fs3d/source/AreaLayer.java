@@ -193,7 +193,7 @@ class TypeArgumentParserAreaLayer extends AreaLayer {
                 if (argumentType != null || commaed || entry != null) {
                     unexpected();
                 }
-                documentStatement.replaceLayer(new ExtendsTypesAreaLayer(documentStatement , typeStatement));
+                documentStatement.replaceLayer(new ExtendsTypesAreaLayer(documentStatement , typeStatement , this));
             }
         }
     }
@@ -229,14 +229,16 @@ class TypeArgumentParserAreaLayer extends AreaLayer {
 }
 
 class ExtendsTypesAreaLayer extends AreaLayer {
+    TypeArgumentParserAreaLayer typeArgumentParserAreaLayer;
     TypeStatement typeStatement;
     TypeStatement extendedType;
     TemporarySetDefaultValueLayer temporarySetDefaultValueLayer;
     List<FS3DType> parents;
 
-    public ExtendsTypesAreaLayer(DocumentStatement statement , TypeStatement typeStatement) {
+    public ExtendsTypesAreaLayer(DocumentStatement statement , TypeStatement typeStatement , TypeArgumentParserAreaLayer typeArgumentParserAreaLayer) {
         super(statement);
         this.typeStatement = typeStatement;
+        this.typeArgumentParserAreaLayer = typeArgumentParserAreaLayer;
         temporarySetDefaultValueLayer = new TemporarySetDefaultValueLayer(statement , typeStatement);
         parents = new LinkedList<>();
     }
@@ -253,15 +255,22 @@ class ExtendsTypesAreaLayer extends AreaLayer {
     public void punctuation(char punctuation) {
         switch (punctuation) {
             case '<' -> {
+                temporarySetDefaultValueLayer.extendedType = extendedType;
                 documentStatement.coverLayer(temporarySetDefaultValueLayer);
             }
 
         }
     }
+
+    @Override
+    public void type(TypeStatement typeStatement) {
+        extendedType = typeStatement;
+    }
 }
 
 class TemporarySetDefaultValueLayer extends AreaLayer {
     TypeStatement typeStatement;
+    TypeStatement extendedType;
 
     public TemporarySetDefaultValueLayer(DocumentStatement statement , TypeStatement typeStatement) {
         super(statement);

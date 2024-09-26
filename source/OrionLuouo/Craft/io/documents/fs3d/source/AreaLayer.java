@@ -91,7 +91,7 @@ abstract class FunctionInitializerStateLayer extends AreaLayer {
 
     @Override
     public void reload() {
-        arguments.add(handler.getHandler());
+        arguments.add(handler.handler);
     }
 
     public void wrongArguments() {
@@ -166,6 +166,7 @@ abstract class FunctionInitializerStateLayer extends AreaLayer {
 @Unfinished
 class HandlerAreaLayer extends AreaLayer {
     HandlerAreaLayer handlerAreaLayer;
+    Handler handler;
 
     HandlerAreaLayer(DocumentStatement statement) {
         super(statement);
@@ -178,11 +179,110 @@ class HandlerAreaLayer extends AreaLayer {
 
     @Override
     public void logout() {
+    }
+
+
+    @Override
+    public void keyword(int index) {
+        switch (index) {
+            case GrammarParser.INDEX_INITIALIZER -> {
+                handler = new InitializerHandler(documentStatement.thisType.type);
+                documentStatement.retractLayer();
+            }
+            case GrammarParser.INDEX_NULL -> {
+                handler = new NullHandler((CustomedType) documentStatement.thisType.type);
+                documentStatement.retractLayer();
+            }
+        }
+    }
+
+    @Unfinished
+    @Override
+    public void punctuation(char punctuation) {
+        switch (punctuation) {
+            case ',' -> {
+                documentStatement.retractLayer();
+            }
+            case ';' -> {
+                documentStatement.retractLayer();
+            }
+            case '+' -> {
+
+            }
+            case '-' -> {
+
+            }
+            case '*' -> {
+
+            }
+            case '/' -> {
+
+            }
+            case '%' -> {
+
+            }
+            case '<' -> {
+
+            }
+            case '>' -> {
+
+            }
+            case '^' -> {
+
+            }
+            case '|' -> {
+
+            }
+            case '&' -> {
+
+            }
+            case '[' -> {
+
+            }
+        }
+    }
+
+    @Override
+    public void type(TypeStatement typeStatement) {
+        documentStatement.coverLayer(new TypeHandlerAreaLayer(documentStatement , typeStatement));
+    }
+}
+
+@Unfinished
+class TypeHandlerAreaLayer extends HandlerAreaLayer {
+    TypeStatement typeStatement;
+    boolean dotted;
+
+    TypeHandlerAreaLayer(DocumentStatement statement , TypeStatement typeStatement) {
+        super(statement);
+        this.typeStatement = typeStatement;
+        dotted = false;
+    }
+
+    @Override
+    public void punctuation(char punctuation) {
+        switch (punctuation) {
+            case '.' -> {
+                dotted = true;
+            }
+        }
+    }
+}
+
+@Unfinished(state = "Maybe extends HandlerAreaLayer.")
+class InstanceHandlerAreaLayer extends AreaLayer {
+    InstanceHandlerAreaLayer(DocumentStatement statement) {
+        super(statement);
+    }
+
+    @Override
+    public void reload() {
 
     }
 
-    public Handler getHandler() {
-        return null;
+    @Override
+    public void logout() {
+
     }
 }
 
@@ -251,7 +351,7 @@ class TypeArgumentParserAreaLayer extends AreaLayer {
     @Override
     public void reload() {
         set.add(entry);
-        fieldDefaultValues.put(index++ , handler.getHandler());
+        fieldDefaultValues.put(index++ , handler.handler);
         entry = null;
         handler = null;
     }
@@ -382,7 +482,7 @@ class TemporarySetDefaultValueLayer extends TypeAreaLayer {
     @Override
     public void reload() {
         super.reload();
-        typeArgumentParserAreaLayer.fieldDefaultValues.put(index , handler.getHandler());
+        typeArgumentParserAreaLayer.fieldDefaultValues.put(index , handler.handler);
         index = 0;
     }
 

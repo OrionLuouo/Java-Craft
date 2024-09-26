@@ -91,6 +91,11 @@ public class DocumentStatement extends FS3Document implements Statement {
             public Iterator<CouplePair<String, FS3DType>> getFieldIterator() {
                 return null;
             }
+
+            @Override
+            public FS3DObject getDefaultValue() {
+                return null;
+            }
         }));
         wordParser = new BlankParser(this);
         grammarParser = new GrammarParser(this);

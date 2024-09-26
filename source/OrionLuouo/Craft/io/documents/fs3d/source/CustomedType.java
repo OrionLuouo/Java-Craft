@@ -213,4 +213,9 @@ public class CustomedType implements FS3DType {
             }
         };
     }
+
+    @Override
+    public CustomedObject getDefaultValue() {
+        return new CustomedObject(this , new FS3DObject[fields.size()]);
+    }
 }

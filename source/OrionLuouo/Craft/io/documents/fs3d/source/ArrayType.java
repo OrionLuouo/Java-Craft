@@ -89,4 +89,9 @@ public class ArrayType implements FS3DType {
             }
         };
     }
+
+    @Override
+    public FS3DObject getDefaultValue() {
+        return new ArrayObject(new FS3DObject[0] , this);
+    }
 }

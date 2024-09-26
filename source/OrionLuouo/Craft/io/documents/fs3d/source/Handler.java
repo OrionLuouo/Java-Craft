@@ -5,6 +5,10 @@ import OrionLuouo.Craft.io.documents.fs3d.FS3DType;
 
 import java.security.Timestamp;
 import java.util.Date;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public interface Handler {
     FS3DType getType();
@@ -33,7 +37,9 @@ record FunctionHandler(Handler[] argumentSources , FunctionVariable function) im
 interface FinalValueHandler extends Handler , FS3DObject {
 }
 
-record FinalIntegerHandler(int value) implements FinalValueHandler , Operator {
+interface DigitHandler extends Handler , Operator {}
+
+record FinalIntegerHandler(int value) implements FinalValueHandler , DigitHandler {
     @Override
     public FS3DType getType() {
         return FS3DType.BASIC_TYPE_INTEGER;
@@ -85,7 +91,7 @@ record FinalIntegerHandler(int value) implements FinalValueHandler , Operator {
     }
 }
 
-record FinalFloatHandler(float value) implements FinalValueHandler , Operator {
+record FinalFloatHandler(float value) implements FinalValueHandler , DigitHandler {
     @Override
     public FS3DType getType() {
         return FS3DType.BASIC_TYPE_FLOAT;
@@ -124,11 +130,6 @@ record FinalFloatHandler(float value) implements FinalValueHandler , Operator {
     @Override
 	public float modFloat(float value) {
         return value % this.value;
-    }
-
-    @Override
-	public int shiftRightInteger(int value) {
-        return value >> getInteger();
     }
 
     @Override
@@ -206,5 +207,138 @@ record BooleanHandler(boolean value) implements FinalValueHandler , BooleanOpera
     @Override
     public FS3DObject getValue() {
         return new BooleanObject(value);
+    }
+}
+
+record NullHandler(CustomedType type) implements Handler {
+    @Override
+    public FS3DType getType() {
+        return type;
+    }
+
+    @Override
+    public FS3DObject getValue() {
+        return new CustomedObject(type , null);
+    }
+}
+
+record InitializerHandler(FS3DType type) implements Handler {
+    @Override
+    public FS3DType getType() {
+        return type;
+    }
+
+    @Override
+    public FS3DObject getValue() {
+        return initialize(type);
+    }
+
+    FS3DObject initialize(FS3DType type) {
+        if (type instanceof CustomedType customedType) {
+            CustomedObject object = customedType.getDefaultValue();
+            Iterator<Map.Entry<String , CustomedType.Field>> iterator = customedType.fields.entrySet().iterator();
+            for (int index = 0 , size = customedType.fields.size() ; index < size ;) {
+                object.values[index++] = initialize(iterator.next().getValue().type());
+            }
+            return object;
+        }
+        else {
+            return type.getDefaultValue();
+        }
+    }
+}
+
+record FormulaHandler(DigitHandler[] values , int[] operators) implements DigitHandler {
+    @Override
+    public int getInteger() {
+        int value = switch (operators[0]) {
+            case 0 -> {
+                yield values[0].getInteger();
+            }
+            case 1 -> {
+                yield values[0].negativeInteger();
+            }
+            default -> throw new IllegalStateException("Unexpected value: " + operators[0]);
+        };
+        BiFunction<Operator, Integer, Integer> addInteger = Operator::addInteger;
+        for (int index = 1 ; index < values.length ;) {
+            switch (operators[index]) {
+                case 0 -> {
+                    value = values[index++].addInteger(value);
+                }
+                case 1 -> {
+                    value = values[index++].subtractInteger(value);
+                }
+                case 2 -> {
+                    value = values[index++].multiplyInteger(value);
+                }
+                case 3 -> {
+                    value = values[index++].divideInteger(value);
+                }
+                case 4 -> {
+                    value = values[index++].modInteger(value);
+                }
+                case 5 -> {
+                    value = values[index++].shiftLeftInteger(value);
+                }
+                case 6 -> {
+                    value = values[index++].shiftRightInteger(value);
+                }
+                case 7 -> {
+                    value = values[index++].powerInteger(value);
+                }
+            }
+        }
+        return value;
+    }
+    
+    public 
+
+    @Override
+    public FS3DType getType() {
+        return null;
+    }
+
+    @Override
+    public FS3DObject getValue() {
+        return null;
+    }
+}
+
+record BooleanFormulaHandler(BooleanHandler[] values, int[] operators) implements Handler {
+    @Override
+    public FS3DType getType() {
+        return null;
+    }
+
+    @Override
+    public FS3DObject getValue() {
+        return null;
+    }
+}
+
+record StringFormulaHandler(StringFormulaHandler[] values) implements Handler {
+
+    @Override
+    public FS3DType getType() {
+        return null;
+    }
+
+    @Override
+    public FS3DObject getValue() {
+        return null;
+    }
+}
+
+record TernaryFormulaHandler(BooleanHandler condition , Handler valueA , Handler valueB) implements Handler {
+
+    @Override
+    public FS3DType getType() {
+        return null;
+    }
+
+    @Override
+    public FS3DObject getValue() {
+        return null;
     }
 }

@@ -6,6 +6,37 @@ import OrionLuouo.Craft.io.documents.fs3d.FS3DType;
 import java.util.Date;
 
 public abstract class BasicObject implements FS3DObject {
+    public static BasicObject initializeInteger() {
+        return new IntegerObject(0);
+    }
+
+    public static BasicObject initializeFloat() {
+        return new FloatObject(0f);
+    }
+
+    public static BasicObject initializeDate() {
+        return new DateObject(new Date());
+    }
+
+    public static BasicObject initializeString() {
+        return new StringObject("");
+    }
+
+    public static BasicObject initializeBoolean() {
+        return new BooleanObject(false);
+    }
+
+    public static BasicObject initializeByte() {
+        return new ByteObject((byte) 0);
+    }
+
+    public static BasicObject initializeCharacter() {
+        return new CharacterObject((char) 0);
+    }
+
+    public static BasicObject initializeTimestamp() {
+        return new TimestampObject(0l);
+    }
 }
 
 class IntegerObject extends BasicObject {

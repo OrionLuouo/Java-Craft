@@ -43,3 +43,19 @@ record FinalFunctionInstance(FS3DObject value) implements FunctionInstance {
         return value;
     }
 }
+
+/**
+ * To convert a formula of instance value to a function value.
+ * @param handler
+ */
+record HandlerFunctionInstance(Handler handler) implements FunctionInstance {
+    @Override
+    public FS3DType getType() {
+        return handler.getType();
+    }
+
+    @Override
+    public FS3DObject invoke(FS3DObject... arguments) {
+        return handler.getValue();
+    }
+}

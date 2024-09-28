@@ -3,7 +3,7 @@ package OrionLuouo.Craft.io.documents.fs3d.source;
 import OrionLuouo.Craft.io.documents.fs3d.FS3DObject;
 import OrionLuouo.Craft.io.documents.fs3d.FS3DType;
 
-public class VariableHandler implements Handler , Variable {
+public class VariableHandle implements Handle, Variable {
     FS3DObject value;
     FS3DType type;
 
@@ -21,4 +21,8 @@ public class VariableHandler implements Handler , Variable {
     public void assignValue(FS3DObject value) {
         this.value = value;
     }
+}
+
+class IntegerVariableHandle extends VariableHandle {
+    IntegerObject value;
 }

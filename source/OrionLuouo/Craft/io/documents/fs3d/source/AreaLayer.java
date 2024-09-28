@@ -2,6 +2,7 @@ package OrionLuouo.Craft.io.documents.fs3d.source;
 
 import OrionLuouo.Craft.io.documents.fs3d.FS3DType;
 import OrionLuouo.Craft.io.documents.fs3d.source.exception.GrammarErrorException;
+import OrionLuouo.Craft.io.documents.fs3d.source.exception.TypeMismatchException;
 import OrionLuouo.Craft.system.annotation.Unfinished;
 
 import java.util.*;
@@ -78,9 +79,9 @@ class TypeAreaLayer extends AreaLayer {
 }
 
 abstract class FunctionInitializerStateLayer extends AreaLayer {
-    List<Handler> arguments;
+    List<Handle> arguments;
     FunctionInstance functionInstance;
-    HandlerAreaLayer handler;
+    HandleAreaLayer handler;
 
     FunctionInitializerStateLayer(DocumentStatement statement) {
         super(statement);
@@ -91,7 +92,7 @@ abstract class FunctionInitializerStateLayer extends AreaLayer {
 
     @Override
     public void reload() {
-        arguments.add(handler.handler);
+        arguments.add(handler.handle);
     }
 
     public void wrongArguments() {
@@ -110,14 +111,16 @@ abstract class FunctionInitializerStateLayer extends AreaLayer {
         }
         if (punctuation == ')') {
             TypeStatement[] standardArguments = getStandardArguments();
-            Iterator<Handler> iterator = arguments.iterator();
+            Iterator<Handle> iterator = arguments.iterator();
             for (int index = 0 ; index < standardArguments.length ;) {
                 if (!iterator.hasNext()) {
                     wrongArguments();
                 }
-                if (iterator.next().getType() != standardArguments[index++].getType()) {
+                FS3DType type = iterator.next().getType();
+                if (!(type == standardArguments[index].getType() || type.isParentOf(standardArguments[index].getType()))) {
                     wrongArguments();
                 }
+                index++;
             }
             functionInstance = initialize();
             documentStatement.retractLayer();
@@ -129,56 +132,104 @@ abstract class FunctionInitializerStateLayer extends AreaLayer {
 
     @Override
     public void keyword(int index) {
-        handler = new HandlerAreaLayer(documentStatement);
+        handler = new HandleAreaLayer(documentStatement);
         handler.keyword(index);
         documentStatement.coverLayer(handler);
     }
 
     @Override
     public void type(TypeStatement typeStatement) {
-        handler = new HandlerAreaLayer(documentStatement);
+        handler = new HandleAreaLayer(documentStatement);
         handler.type(typeStatement);
         documentStatement.coverLayer(handler);
     }
 
     @Override
     public void variable(Variable variable) {
-        handler = new HandlerAreaLayer(documentStatement);
+        handler = new HandleAreaLayer(documentStatement);
         handler.variable(variable);
         documentStatement.coverLayer(handler);
     }
 
     @Override
     public void function(int index) {
-        handler = new HandlerAreaLayer(documentStatement);
+        handler = new HandleAreaLayer(documentStatement);
         handler.function(index);
         documentStatement.coverLayer(handler);
     }
 
     @Override
     public void token(String token) {
-        handler = new HandlerAreaLayer(documentStatement);
+        handler = new HandleAreaLayer(documentStatement);
         handler.token(token);
         documentStatement.coverLayer(handler);
     }
 }
 
-@Unfinished
-class HandlerAreaLayer extends AreaLayer {
-    HandlerAreaLayer handlerAreaLayer;
-    Handler handler;
+class HandleProxyAreaLayer extends HandleAreaLayer {
+    final FS3DType type;
 
-    HandlerAreaLayer(DocumentStatement statement) {
+    HandleProxyAreaLayer(DocumentStatement statement , FS3DType type) {
         super(statement);
+        this.type = type;
     }
 
     @Override
     public void reload() {
-
+        if (!(type == handle.getType() || type.isParentOf(handle.getType()))) {
+            TypeMismatchException.assignWrongObject(documentStatement);
+        }
+        documentStatement.retractLayer();
     }
 
     @Override
     public void logout() {
+
+    }
+}
+
+@Unfinished
+class HandleAreaLayer extends AreaLayer {
+    HandleAreaLayer handleAreaLayer;
+    Handle handle;
+    List<Handle> handles;
+    int typeIndex;
+
+    HandleAreaLayer(DocumentStatement statement) {
+        super(statement);
+        handles = new LinkedList<>();
+    }
+
+    @Override
+    public void reload() {
+        Handle handle = handleAreaLayer.handle;
+        if (handles.isEmpty()) {
+            FS3DType type = handle.getType();
+            typeIndex = type == FS3DType.BASIC_TYPE_INTEGER ? 0 : type == FS3DType.BASIC_TYPE_FLOAT ? 1 : type == FS3DType.BASIC_TYPE_STRING ? 2 : type == FS3DType.BASIC_TYPE_BOOLEAN ? 3 : 4;
+        }
+        handles.add(handle);
+    }
+
+    @Override
+    public void logout() {
+        if (handles.size() == 1) {
+            handle = handles.get(0);
+            return;
+        }
+        switch (typeIndex) {
+            case 0 -> {
+
+            }
+            case 1 -> {
+
+            }
+            case 2 -> {
+
+            }
+            case 3 -> {
+
+            }
+        }
     }
 
 
@@ -186,11 +237,11 @@ class HandlerAreaLayer extends AreaLayer {
     public void keyword(int index) {
         switch (index) {
             case GrammarParser.INDEX_INITIALIZER -> {
-                handler = new InitializerHandler(documentStatement.thisType.type);
+                handle = new InitializerHandle(documentStatement.thisType.type);
                 documentStatement.retractLayer();
             }
             case GrammarParser.INDEX_NULL -> {
-                handler = new NullHandler((CustomedType) documentStatement.thisType.type);
+                handle = new NullHandle((CustomedType) documentStatement.thisType.type);
                 documentStatement.retractLayer();
             }
         }
@@ -244,16 +295,16 @@ class HandlerAreaLayer extends AreaLayer {
 
     @Override
     public void type(TypeStatement typeStatement) {
-        documentStatement.coverLayer(new TypeHandlerAreaLayer(documentStatement , typeStatement));
+        documentStatement.coverLayer(new TypeHandleAreaLayer(documentStatement , typeStatement));
     }
 }
 
 @Unfinished
-class TypeHandlerAreaLayer extends HandlerAreaLayer {
+class TypeHandleAreaLayer extends HandleAreaLayer {
     TypeStatement typeStatement;
     boolean dotted;
 
-    TypeHandlerAreaLayer(DocumentStatement statement , TypeStatement typeStatement) {
+    TypeHandleAreaLayer(DocumentStatement statement , TypeStatement typeStatement) {
         super(statement);
         this.typeStatement = typeStatement;
         dotted = false;
@@ -294,8 +345,8 @@ class TypeArgumentParserAreaLayer extends AreaLayer {
     int index;
     Map.Entry<String, CustomedType.Field> entry;
     Set<Map.Entry<String, CustomedType.Field>> set;
-    HandlerAreaLayer handler;
-    Map<Integer , Handler> fieldDefaultValues;
+    HandleAreaLayer handle;
+    Map<Integer , Handle> fieldDefaultValues;
 
     public TypeArgumentParserAreaLayer(DocumentStatement statement, TypeStatement typeStatement) {
         super(statement);
@@ -320,7 +371,7 @@ class TypeArgumentParserAreaLayer extends AreaLayer {
                 if (entry == null) {
                     unexpected();
                 }
-                documentStatement.newLayer(handler = new HandlerAreaLayer(documentStatement));
+                documentStatement.newLayer(handle = new HandleProxyAreaLayer(documentStatement , argumentType.type));
             }
             case '>' -> {
                 if (argumentType != null || commaed || entry != null) {
@@ -351,9 +402,9 @@ class TypeArgumentParserAreaLayer extends AreaLayer {
     @Override
     public void reload() {
         set.add(entry);
-        fieldDefaultValues.put(index++ , handler.handler);
+        fieldDefaultValues.put(index++ , handle.handle);
         entry = null;
-        handler = null;
+        handle = null;
     }
 
     @Override
@@ -392,7 +443,7 @@ class ExtendsTypesAreaLayer extends AreaLayer {
         for (int index = 0 ; index < parents.size() ;) {
             type.parents[index++] = iterator.next();
         }
-        typeStatement.fieldDefaultValues = new Handler[typeArgumentParserAreaLayer.fieldDefaultValues.size()];
+        typeStatement.fieldDefaultValues = new Handle[typeArgumentParserAreaLayer.fieldDefaultValues.size()];
         for (var entry : typeArgumentParserAreaLayer.fieldDefaultValues.entrySet()) {
             typeStatement.fieldDefaultValues[entry.getKey()] = entry.getValue();
         }
@@ -434,7 +485,7 @@ class TemporarySetDefaultValueLayer extends TypeAreaLayer {
     FS3DType parent;
     TypeArgumentParserAreaLayer typeArgumentParserAreaLayer;
     int index;
-    HandlerAreaLayer handler;
+    HandleAreaLayer handler;
 
     public TemporarySetDefaultValueLayer(DocumentStatement statement , TypeStatement typeStatement , TypeArgumentParserAreaLayer typeArgumentParserAreaLayer) {
         super(statement , typeStatement);
@@ -462,7 +513,7 @@ class TemporarySetDefaultValueLayer extends TypeAreaLayer {
                 if (index == 0) {
                     GrammarErrorException.invalidElement(documentStatement);
                 }
-                documentStatement.coverLayer(handler = new HandlerAreaLayer(documentStatement));
+                documentStatement.coverLayer(handler = new HandleAreaLayer(documentStatement));
             }
             case ',' -> {
                 if (index != 0) {
@@ -479,10 +530,11 @@ class TemporarySetDefaultValueLayer extends TypeAreaLayer {
         }
     }
 
+    @Unfinished(state = "The default values' types remain unchecked.")
     @Override
     public void reload() {
         super.reload();
-        typeArgumentParserAreaLayer.fieldDefaultValues.put(index , handler.handler);
+        typeArgumentParserAreaLayer.fieldDefaultValues.put(index , handler.handle);
         index = 0;
     }
 

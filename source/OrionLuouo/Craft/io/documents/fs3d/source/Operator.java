@@ -1,8 +1,10 @@
 package OrionLuouo.Craft.io.documents.fs3d.source;
 
+import java.util.Set;
 import java.util.function.BiFunction;
 
 public interface Operator {
+    Set<Character> POTENTIAL_OPERATOR_CHARACTERS = Set.of('+' , '-' , '*' , '/' , '%' , '=' , '?' , ':' , '<' , '>' , '^' , '&' , '|' , '!');
 
     default int getInteger() {
         return (int) getFloat();

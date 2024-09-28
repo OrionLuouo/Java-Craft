@@ -9,7 +9,7 @@ public class TypeStatement {
     FS3DType type;
     Map<String , Variable> variableMap;
     Map<String , TypeStatement> typeMap;
-    Handler[] fieldDefaultValues;
+    Handle[] fieldDefaultValues;
 
     TypeStatement() {
         type = new CustomedType();

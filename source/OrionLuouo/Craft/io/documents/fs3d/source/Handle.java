@@ -3,19 +3,16 @@ package OrionLuouo.Craft.io.documents.fs3d.source;
 import OrionLuouo.Craft.io.documents.fs3d.FS3DObject;
 import OrionLuouo.Craft.io.documents.fs3d.FS3DType;
 
-import java.security.Timestamp;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
-public interface Handler {
+public interface Handle {
     FS3DType getType();
     FS3DObject getValue();
 }
 
-record FunctionHandler(Handler[] argumentSources , FunctionVariable function) implements Handler {
+record FunctionHandle(Handle[] argumentSources , FunctionVariable function) implements Handle {
     @Override
     public FS3DType getType() {
         return function.getType();
@@ -34,12 +31,12 @@ record FunctionHandler(Handler[] argumentSources , FunctionVariable function) im
     }
 }
 
-interface FinalValueHandler extends Handler , FS3DObject {
+interface FinalValueHandle extends Handle, FS3DObject {
 }
 
-interface DigitHandler extends Handler , Operator {}
+interface DigitHandle extends Handle, Operator {}
 
-record FinalIntegerHandler(int value) implements FinalValueHandler , DigitHandler {
+record FinalIntegerHandle(int value) implements FinalValueHandle, DigitHandle {
     @Override
     public FS3DType getType() {
         return FS3DType.BASIC_TYPE_INTEGER;
@@ -81,7 +78,7 @@ record FinalIntegerHandler(int value) implements FinalValueHandler , DigitHandle
     }
 
     @Override
-	public int negativeInteger(int value) {
+	public int negativeInteger() {
         return -this.value;
     }
 
@@ -91,7 +88,7 @@ record FinalIntegerHandler(int value) implements FinalValueHandler , DigitHandle
     }
 }
 
-record FinalFloatHandler(float value) implements FinalValueHandler , DigitHandler {
+record FinalFloatHandle(float value) implements FinalValueHandle, DigitHandle {
     @Override
     public FS3DType getType() {
         return FS3DType.BASIC_TYPE_FLOAT;
@@ -133,12 +130,12 @@ record FinalFloatHandler(float value) implements FinalValueHandler , DigitHandle
     }
 
     @Override
-	public float negativeFloat(float value) {
+	public float negativeFloat() {
         return -this.value;
     }
 }
 
-record FinalStringHandler(String value) implements FinalValueHandler {
+record FinalStringHandle(String value) implements FinalValueHandle {
     @Override
     public FS3DType getType() {
         return FS3DType.BASIC_TYPE_STRING;
@@ -154,7 +151,7 @@ record FinalStringHandler(String value) implements FinalValueHandler {
     }
 }
 
-record FinalDateHandler(DateObject value) implements FinalValueHandler {
+record FinalDateHandle(DateObject value) implements FinalValueHandle {
     @Override
     public FS3DType getType() {
         return FS3DType.BASIC_TYPE_DATE;
@@ -166,7 +163,7 @@ record FinalDateHandler(DateObject value) implements FinalValueHandler {
     }
 }
 
-record FinalTimestampHandler(TimestampObject value) implements FinalValueHandler {
+record FinalTimestampHandle(TimestampObject value) implements FinalValueHandle {
     @Override
     public FS3DType getType() {
         return FS3DType.BASIC_TYPE_TIMESTAMP;
@@ -178,7 +175,7 @@ record FinalTimestampHandler(TimestampObject value) implements FinalValueHandler
     }
 }
 
-record BooleanHandler(boolean value) implements FinalValueHandler , BooleanOperator {
+record BooleanHandle(boolean value) implements FinalValueHandle, BooleanOperator {
     @Override
     public boolean get() {
         return value;
@@ -210,7 +207,7 @@ record BooleanHandler(boolean value) implements FinalValueHandler , BooleanOpera
     }
 }
 
-record NullHandler(CustomedType type) implements Handler {
+record NullHandle(CustomedType type) implements Handle {
     @Override
     public FS3DType getType() {
         return type;
@@ -222,7 +219,7 @@ record NullHandler(CustomedType type) implements Handler {
     }
 }
 
-record InitializerHandler(FS3DType type) implements Handler {
+record InitializerHandle(FS3DType type) implements Handle {
     @Override
     public FS3DType getType() {
         return type;
@@ -248,7 +245,75 @@ record InitializerHandler(FS3DType type) implements Handler {
     }
 }
 
-record FormulaHandler(DigitHandler[] values , int[] operators) implements DigitHandler {
+record IntegerIncreaseHandle(IntegerVariableHandle source) implements DigitHandle {
+    @Override
+    public int getInteger() {
+        return source.value.value++;
+    }
+
+    @Override
+    public FS3DType getType() {
+        return FS3DType.BASIC_TYPE_INTEGER;
+    }
+
+    @Override
+    public FS3DObject getValue() {
+        return new IntegerObject(getInteger());
+    }
+}
+
+record IntegerPreIncreaseHandle(IntegerVariableHandle source) implements DigitHandle {
+    @Override
+    public int getInteger() {
+        return ++source.value.value;
+    }
+
+    @Override
+    public FS3DType getType() {
+        return FS3DType.BASIC_TYPE_INTEGER;
+    }
+
+    @Override
+    public FS3DObject getValue() {
+        return new IntegerObject(getInteger());
+    }
+}
+
+record IntegerDecreaseHandle(IntegerVariableHandle source) implements DigitHandle {
+    @Override
+    public int getInteger() {
+        return source.value.value--;
+    }
+
+    @Override
+    public FS3DType getType() {
+        return FS3DType.BASIC_TYPE_INTEGER;
+    }
+
+    @Override
+    public FS3DObject getValue() {
+        return new IntegerObject(getInteger());
+    }
+}
+
+record IntegerPreDecreaseHandle(IntegerVariableHandle source) implements DigitHandle {
+    @Override
+    public int getInteger() {
+        return --source.value.value;
+    }
+
+    @Override
+    public FS3DType getType() {
+        return FS3DType.BASIC_TYPE_INTEGER;
+    }
+
+    @Override
+    public FS3DObject getValue() {
+        return new IntegerObject(getInteger());
+    }
+}
+
+record IntegerFormulaHandle(DigitHandle[] values , int[] operators) implements DigitHandle {
     @Override
     public int getInteger() {
         int value = switch (operators[0]) {
@@ -291,8 +356,80 @@ record FormulaHandler(DigitHandler[] values , int[] operators) implements DigitH
         }
         return value;
     }
-    
-    public 
+
+    @Override
+    public FS3DType getType() {
+        return FS3DType.BASIC_TYPE_INTEGER;
+    }
+
+    @Override
+    public FS3DObject getValue() {
+        return new IntegerObject(getInteger());
+    }
+}
+
+record FloatFormulaHandle(DigitHandle[] values , int[] operators) implements DigitHandle {
+    @Override
+    public float getFloat() {
+        float value = switch (operators[0]) {
+            case 0 -> {
+                yield values[0].getFloat();
+            }
+            case 1 -> {
+                yield values[0].negativeFloat();
+            }
+            default -> throw new IllegalStateException("Unexpected value: " + operators[0]);
+        };
+        BiFunction<Operator, Float, Float> addFloat = Operator::addFloat;
+        for (int index = 1 ; index < values.length ;) {
+            switch (operators[index]) {
+                case 0 -> {
+                    value = values[index++].addFloat(value);
+                }
+                case 1 -> {
+                    value = values[index++].subtractFloat(value);
+                }
+                case 2 -> {
+                    value = values[index++].multiplyFloat(value);
+                }
+                case 3 -> {
+                    value = values[index++].divideFloat(value);
+                }
+                case 4 -> {
+                    value = values[index++].modFloat(value);
+                }
+                case 5 -> {
+                    value = values[index++].powerFloat(value);
+                }
+            }
+        }
+        return value;
+    }
+
+    @Override
+    public FS3DType getType() {
+        return FS3DType.BASIC_TYPE_FLOAT;
+    }
+
+    @Override
+    public FS3DObject getValue() {
+        return new FloatObject(getFloat());
+    }
+}
+
+record BooleanFormulaHandle(BooleanHandle[] values, int[] operators) implements Handle {
+    @Override
+    public FS3DType getType() {
+        return null;
+    }
+
+    @Override
+    public FS3DObject getValue() {
+        return null;
+    }
+}
+
+record StringFormulaHandle(StringFormulaHandle[] values) implements Handle {
 
     @Override
     public FS3DType getType() {
@@ -305,32 +442,7 @@ record FormulaHandler(DigitHandler[] values , int[] operators) implements DigitH
     }
 }
 
-record BooleanFormulaHandler(BooleanHandler[] values, int[] operators) implements Handler {
-    @Override
-    public FS3DType getType() {
-        return null;
-    }
-
-    @Override
-    public FS3DObject getValue() {
-        return null;
-    }
-}
-
-record StringFormulaHandler(StringFormulaHandler[] values) implements Handler {
-
-    @Override
-    public FS3DType getType() {
-        return null;
-    }
-
-    @Override
-    public FS3DObject getValue() {
-        return null;
-    }
-}
-
-record TernaryFormulaHandler(BooleanHandler condition , Handler valueA , Handler valueB) implements Handler {
+record TernaryFormulaHandle(BooleanHandle condition , Handle valueA , Handle valueB) implements Handle {
 
     @Override
     public FS3DType getType() {

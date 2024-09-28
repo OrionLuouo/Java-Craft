@@ -4,13 +4,11 @@ import OrionLuouo.Craft.data.CouplePair;
 import OrionLuouo.Craft.data.Function;
 import OrionLuouo.Craft.io.documents.fs3d.FS3DObject;
 import OrionLuouo.Craft.io.documents.fs3d.FS3DType;
-import OrionLuouo.Craft.system.annotation.Unfinished;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 
 public interface FunctionInstance {
     class FunctionKernel {
@@ -46,16 +44,16 @@ record FinalFunctionInstance(FS3DObject value) implements FunctionInstance {
 
 /**
  * To convert a formula of instance value to a function value.
- * @param handler
+ * @param handle
  */
-record HandlerFunctionInstance(Handler handler) implements FunctionInstance {
+record HandlerFunctionInstance(Handle handle) implements FunctionInstance {
     @Override
     public FS3DType getType() {
-        return handler.getType();
+        return handle.getType();
     }
 
     @Override
     public FS3DObject invoke(FS3DObject... arguments) {
-        return handler.getValue();
+        return handle.getValue();
     }
 }

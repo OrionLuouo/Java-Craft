@@ -217,6 +217,7 @@ class HandleAreaLayer extends AreaLayer {
         handles.add(new CouplePair<>(handle , operator));
     }
 
+    @Unfinished
     @Override
     public void logout() {
         if (handles.size() == 1) {
@@ -257,10 +258,24 @@ class HandleAreaLayer extends AreaLayer {
                 handle = new FloatFormulaHandle(digitHandles , operators);
             }
             case 2 -> {
-
+                StringFormulaHandle[] stringHandles = new StringFormulaHandle[handles.size()];
+                Iterator<CouplePair<Handle , Integer>> iterator = handles.iterator();
+                for (int index = 0 ; index < stringHandles.length ;) {
+                    CouplePair<Handle , Integer> pair = iterator.next();
+                    stringHandles[index++] = (StringFormulaHandle) pair.valueA();
+                }
+                handle = new StringFormulaHandle(stringHandles);
             }
             case 3 -> {
-
+                BooleanHandle[] booleanHandles = new BooleanHandle[handles.size()];
+                Iterator<CouplePair<Handle , Integer>> iterator = handles.iterator();
+                int[] operators = new int[handles.size()];
+                for (int index = 0 ; index < booleanHandles.length ;) {
+                    CouplePair<Handle , Integer> pair = iterator.next();
+                    booleanHandles[index] = (BooleanHandle) pair.valueA();
+                    operators[index++] = pair.valueB();
+                }
+                handle = new BooleanFormulaHandle(booleanHandles , operators);
             }
         }
     }
@@ -268,12 +283,12 @@ class HandleAreaLayer extends AreaLayer {
 
     @Override
     public void keyword(int index) {
+
     }
 
     @Unfinished
     @Override
     public void punctuation(char punctuation) {
-        /*
         switch (punctuation) {
             case ',' -> {
                 documentStatement.retractLayer();
@@ -309,14 +324,28 @@ class HandleAreaLayer extends AreaLayer {
                 operator = 6;
                 documentStatement.newLayer(new WordOperatorCheckStateLayer(documentStatement , this , punctuation));
             }
+            case '(' -> {
+                documentStatement.coverLayer(handleAreaLayer = new HandleAreaLayer(documentStatement));
+            }
+            case ')' -> {
+                documentStatement.retractLayer();
+                return;
+            }
         }
-        */
     }
 
     @Override
     public void type(TypeStatement typeStatement) {
         documentStatement.coverLayer(new TypeHandleAreaLayer(documentStatement , typeStatement));
     }
+}
+
+class OnceHandleAreaLayer extends HandleAreaLayer {
+    OnceHandleAreaLayer(DocumentStatement statement) {
+        super(statement);
+    }
+
+
 }
 
 @Unfinished
@@ -341,8 +370,8 @@ class TypeHandleAreaLayer extends HandleAreaLayer {
 }
 
 @Unfinished(state = "Maybe extends HandlerAreaLayer.")
-class InstanceHandlerAreaLayer extends AreaLayer {
-    InstanceHandlerAreaLayer(DocumentStatement statement) {
+class InstanceHandleAreaLayer extends AreaLayer {
+    InstanceHandleAreaLayer(DocumentStatement statement) {
         super(statement);
     }
 

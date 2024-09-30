@@ -2,6 +2,7 @@ package OrionLuouo.Craft.io.documents.fs3d.source;
 
 import OrionLuouo.Craft.io.documents.fs3d.FS3DObject;
 import OrionLuouo.Craft.io.documents.fs3d.FS3DType;
+import OrionLuouo.Craft.system.annotation.Unfinished;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -175,7 +176,11 @@ record FinalTimestampHandle(TimestampObject value) implements FinalValueHandle {
     }
 }
 
-record BooleanHandle(boolean value) implements FinalValueHandle, BooleanOperator {
+interface BooleanHandle extends Handle , BooleanOperator {
+    boolean get();
+}
+
+record FinalBooleanHandle(boolean value) implements FinalValueHandle, BooleanHandle {
     @Override
     public boolean get() {
         return value;
@@ -417,40 +422,65 @@ record FloatFormulaHandle(DigitHandle[] values , int[] operators) implements Dig
     }
 }
 
-record BooleanFormulaHandle(BooleanHandle[] values, int[] operators) implements Handle {
+record BooleanFormulaHandle(BooleanHandle[] values, int[] operators) implements BooleanHandle {
     @Override
     public FS3DType getType() {
-        return null;
+        return FS3DType.BASIC_TYPE_BOOLEAN;
     }
 
     @Override
     public FS3DObject getValue() {
-        return null;
+        return new BooleanObject(get());
+    }
+
+    @Override
+    public boolean get() {
+        boolean value = values[0].get();
+        for (int index = 1 ; index < values.length ;) {
+            switch (operators[index]) {
+                case 0 -> {
+                    value = values[index++].or(value);
+                }
+                case 1 -> {
+                    value = values[index++].and(value);
+                }
+                case 2 -> {
+                    value = values[index++].xor(value);
+                }
+            }
+        }
+        return false;
     }
 }
 
 record StringFormulaHandle(StringFormulaHandle[] values) implements Handle {
-
     @Override
     public FS3DType getType() {
-        return null;
+        return FS3DType.BASIC_TYPE_STRING;
     }
 
     @Override
     public FS3DObject getValue() {
-        return null;
+        return new StringObject(get());
+    }
+
+    public String get() {
+        StringBuilder builder = new StringBuilder();
+        for (StringFormulaHandle handle : values) {
+            builder.append(handle.get());
+        }
+        return builder.toString();
     }
 }
 
 record TernaryFormulaHandle(BooleanHandle condition , Handle valueA , Handle valueB) implements Handle {
-
     @Override
     public FS3DType getType() {
-        return null;
+        return valueA.getType();
     }
 
     @Override
     public FS3DObject getValue() {
-        return null;
+        return condition.get() ? valueA.getValue() : valueB.getValue();
     }
 }

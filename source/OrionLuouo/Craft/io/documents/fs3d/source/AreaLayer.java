@@ -189,7 +189,7 @@ class HandleProxyAreaLayer extends HandleAreaLayer {
     }
 }
 
-@Unfinished
+@Unfinished(state = "做嵌套，和运算符优先级")
 class HandleAreaLayer extends AreaLayer {
     HandleAreaLayer handleAreaLayer;
     Handle handle;

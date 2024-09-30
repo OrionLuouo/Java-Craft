@@ -1,5 +1,6 @@
 package OrionLuouo.Craft.io.documents.fs3d.source;
 
+import OrionLuouo.Craft.data.CouplePair;
 import OrionLuouo.Craft.io.documents.fs3d.FS3DType;
 import OrionLuouo.Craft.io.documents.fs3d.source.exception.GrammarErrorException;
 import OrionLuouo.Craft.io.documents.fs3d.source.exception.TypeMismatchException;
@@ -192,8 +193,14 @@ class HandleProxyAreaLayer extends HandleAreaLayer {
 class HandleAreaLayer extends AreaLayer {
     HandleAreaLayer handleAreaLayer;
     Handle handle;
-    List<Handle> handles;
-    int typeIndex;
+    List<CouplePair<Handle , Integer>> handles;
+    /** 0 = integer
+     *  1 = float
+     *  2 = string
+     *  3 = boolean
+     *  4 = OTHERS
+     */
+    int typeIndex , operator;
 
     HandleAreaLayer(DocumentStatement statement) {
         super(statement);
@@ -207,21 +214,47 @@ class HandleAreaLayer extends AreaLayer {
             FS3DType type = handle.getType();
             typeIndex = type == FS3DType.BASIC_TYPE_INTEGER ? 0 : type == FS3DType.BASIC_TYPE_FLOAT ? 1 : type == FS3DType.BASIC_TYPE_STRING ? 2 : type == FS3DType.BASIC_TYPE_BOOLEAN ? 3 : 4;
         }
-        handles.add(handle);
+        handles.add(new CouplePair<>(handle , operator));
     }
 
     @Override
     public void logout() {
         if (handles.size() == 1) {
-            handle = handles.get(0);
+            handle = handles.getFirst().valueA();
             return;
         }
         switch (typeIndex) {
             case 0 -> {
-
+                DigitHandle[] digitHandles = new DigitHandle[handles.size()];
+                int[] operators = new int[handles.size()];
+                Iterator<CouplePair<Handle , Integer>> iterator = handles.iterator();
+                for (int index = 0 ; index < digitHandles.length ;) {
+                    CouplePair<Handle , Integer> pair = iterator.next();
+                    try {
+                        digitHandles[index] = (DigitHandle) pair.valueA();
+                        operators[index++] = pair.valueB();
+                    } catch (Exception e) {
+                        documentStatement.stateNow = e.getMessage();
+                        unexpected();
+                    }
+                }
+                handle = new IntegerFormulaHandle(digitHandles , operators);
             }
             case 1 -> {
-
+                DigitHandle[] digitHandles = new DigitHandle[handles.size()];
+                int[] operators = new int[handles.size()];
+                Iterator<CouplePair<Handle , Integer>> iterator = handles.iterator();
+                for (int index = 0 ; index < digitHandles.length ;) {
+                    CouplePair<Handle , Integer> pair = iterator.next();
+                    try {
+                        digitHandles[index] = (DigitHandle) pair.valueA();
+                        operators[index++] = pair.valueB();
+                    } catch (Exception e) {
+                        documentStatement.stateNow = e.getMessage();
+                        unexpected();
+                    }
+                }
+                handle = new FloatFormulaHandle(digitHandles , operators);
             }
             case 2 -> {
 
@@ -235,21 +268,12 @@ class HandleAreaLayer extends AreaLayer {
 
     @Override
     public void keyword(int index) {
-        switch (index) {
-            case GrammarParser.INDEX_INITIALIZER -> {
-                handle = new InitializerHandle(documentStatement.thisType.type);
-                documentStatement.retractLayer();
-            }
-            case GrammarParser.INDEX_NULL -> {
-                handle = new NullHandle((CustomedType) documentStatement.thisType.type);
-                documentStatement.retractLayer();
-            }
-        }
     }
 
     @Unfinished
     @Override
     public void punctuation(char punctuation) {
+        /*
         switch (punctuation) {
             case ',' -> {
                 documentStatement.retractLayer();
@@ -258,39 +282,35 @@ class HandleAreaLayer extends AreaLayer {
                 documentStatement.retractLayer();
             }
             case '+' -> {
-
+                operator = 0;
+                documentStatement.coverLayer(handleAreaLayer = new HandleAreaLayer(documentStatement));
             }
             case '-' -> {
-
+                operator = 1;
+                documentStatement.coverLayer(handleAreaLayer = new HandleAreaLayer(documentStatement));
             }
             case '*' -> {
-
+                operator = 2;
+                documentStatement.coverLayer(handleAreaLayer = new HandleAreaLayer(documentStatement));
             }
             case '/' -> {
-
+                operator = 3;
+                documentStatement.coverLayer(handleAreaLayer = new HandleAreaLayer(documentStatement));
             }
             case '%' -> {
-
+                operator = 4;
+                documentStatement.coverLayer(handleAreaLayer = new HandleAreaLayer(documentStatement));
             }
             case '<' -> {
-
+                operator = 5;
+                documentStatement.newLayer(new WordOperatorCheckStateLayer(documentStatement , this , punctuation));
             }
             case '>' -> {
-
-            }
-            case '^' -> {
-
-            }
-            case '|' -> {
-
-            }
-            case '&' -> {
-
-            }
-            case '[' -> {
-
+                operator = 6;
+                documentStatement.newLayer(new WordOperatorCheckStateLayer(documentStatement , this , punctuation));
             }
         }
+        */
     }
 
     @Override

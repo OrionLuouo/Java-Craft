@@ -73,3 +73,24 @@ class PreTypeArgumentParserAreaLayer extends StateLayer {
         }
     }
 }
+
+class WordOperatorCheckStateLayer extends StateLayer {
+    HandleAreaLayer handleAreaLayer;
+    char operator;
+
+    WordOperatorCheckStateLayer(DocumentStatement statement , HandleAreaLayer handleAreaLayer , char operator) {
+        super(statement);
+        this.handleAreaLayer = handleAreaLayer;
+        this.operator = operator;
+    }
+
+    @Override
+    public void punctuation(char punctuation) {
+        if (punctuation == operator) {
+            documentStatement.replaceLayer(handleAreaLayer.handleAreaLayer = new HandleAreaLayer(documentStatement));
+        }
+        else {
+            unexpected();
+        }
+    }
+}

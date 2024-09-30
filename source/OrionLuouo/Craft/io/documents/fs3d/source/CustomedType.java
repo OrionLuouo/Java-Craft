@@ -89,6 +89,16 @@ public class CustomedType implements FS3DType {
                 }
             };
         }
+
+        @Override
+        public FS3DObject getDefaultValue() {
+            return new FS3DObject() {
+                @Override
+                public FS3DType getType() {
+                    return getType();
+                }
+            };
+        }
     };
 
     record Field(FS3DType type , int index) {

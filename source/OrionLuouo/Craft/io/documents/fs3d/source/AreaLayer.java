@@ -340,14 +340,6 @@ class HandleAreaLayer extends AreaLayer {
     }
 }
 
-class OnceHandleAreaLayer extends HandleAreaLayer {
-    OnceHandleAreaLayer(DocumentStatement statement) {
-        super(statement);
-    }
-
-
-}
-
 @Unfinished
 class TypeHandleAreaLayer extends HandleAreaLayer {
     TypeStatement typeStatement;

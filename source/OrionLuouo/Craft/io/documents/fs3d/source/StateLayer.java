@@ -94,3 +94,10 @@ class WordOperatorCheckStateLayer extends StateLayer {
         }
     }
 }
+
+class SourceHandlerStateLayer extends StateLayer {
+
+    SourceHandlerStateLayer(DocumentStatement statement) {
+        super(statement);
+    }
+}

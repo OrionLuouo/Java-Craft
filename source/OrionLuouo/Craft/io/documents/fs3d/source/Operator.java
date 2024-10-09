@@ -5,6 +5,30 @@ import java.util.function.BiFunction;
 
 public interface Operator {
     Set<Character> POTENTIAL_OPERATOR_CHARACTERS = Set.of('+' , '-' , '*' , '/' , '%' , '=' , '?' , ':' , '<' , '>' , '^' , '&' , '|' , '!');
+    OperatorPriority[] OPERATOR_PRIORITIES = new OperatorPriority[]{
+            new SingleOperatorPriority(7) // ^
+            , new RangeOperatorPriority(5 , 6) // << >>
+            , new RangeOperatorPriority(2, 4) // * / %
+            , new RangeOperatorPriority(0, 1) // + -
+    };
+
+    interface OperatorPriority {
+        boolean corresponds(int operator);
+    }
+
+    record SingleOperatorPriority(int operator) implements OperatorPriority {
+        @Override
+        public boolean corresponds(int operator) {
+            return operator == this.operator;
+        }
+    }
+
+    record RangeOperatorPriority(int begin , int end) implements OperatorPriority {
+        @Override
+        public boolean corresponds(int operator) {
+            return operator >= begin && operator <= end;
+        }
+    }
 
     default int getInteger() {
         return (int) getFloat();

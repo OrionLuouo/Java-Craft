@@ -6,11 +6,11 @@ public class MergeTest {
     static char[] buffer = new char[65536];
 
     public static void main(String[] args) throws IOException {
-        //initialize(".out.other.fs3dMerge" , ".source.OrionLuouo.Craft.io.documents.fs3d");
-        initialize("\\out\\other\\CraftMerge" , "\\source\\OrionLuouo\\Craft");
+        //merge(".out.other.fs3dMerge".replace("." , "\\\\") , ".source.OrionLuouo.Craft.io.documents.fs3d".replace("." , "\\\\"));
+        merge("\\out\\other\\CraftMerge" , "\\source\\OrionLuouo\\Craft");
     }
     
-    public static void initialize(String fileName , String source) throws IOException {
+    public static void merge(String fileName , String source) throws IOException {
         String rootPath = System.getProperty("user.dir");
         File destination = new File(rootPath + fileName);
         destination.createNewFile();
@@ -33,5 +33,6 @@ public class MergeTest {
             destination.write(buffer , 0, count);
         }
         destination.write('\n');
+        System.out.println(">File \"" + source.getAbsolutePath().replace("\\\\" , ".") + "\" appended.");
     }
 }

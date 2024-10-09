@@ -29,7 +29,7 @@ public class GrammarParser {
         KEYWORDS.put("group" , INDEX_GROUP);
         KEYWORDS.put("function" , INDEX_FUNCTION);
         KEYWORDS.put("virtual" , INDEX_VIRTUAL);
-        KEYWORDS.put("void" , INDEX_VOID);
+        //KEYWORDS.put("void" , INDEX_VOID);
         KEYWORDS.put("initializer" , INDEX_INITIALIZER);
         KEYWORDS.put("null" , INDEX_NULL);
         KEYWORDS.put("int" , INDEX_INTEGER);

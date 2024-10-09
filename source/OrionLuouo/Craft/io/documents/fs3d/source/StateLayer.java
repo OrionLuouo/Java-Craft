@@ -44,36 +44,6 @@ public class StateLayer {
     }
 }
 
-class PreTypeInitialingAreaLayer extends StateLayer {
-
-    PreTypeInitialingAreaLayer(DocumentStatement statement) {
-        super(statement);
-    }
-
-    @Override
-    public void newIdentifier(String identifier) {
-        documentStatement.newLayer(new PreTypeArgumentParserAreaLayer(documentStatement , identifier));
-    }
-}
-
-class PreTypeArgumentParserAreaLayer extends StateLayer {
-    String name;
-
-    PreTypeArgumentParserAreaLayer(DocumentStatement statement , String name) {
-        super(statement);
-        this.name = name;
-    }
-
-    @Override
-    public void punctuation(char punctuation) {
-        if (punctuation == '<') {
-            TypeStatement statement = new TypeStatement(name);
-            documentStatement.typeStatementMap.put(statement.type , statement);
-            documentStatement.newLayer(new TypeArgumentParserAreaLayer(documentStatement , statement));
-        }
-    }
-}
-
 class WordOperatorCheckStateLayer extends StateLayer {
     HandleAreaLayer handleAreaLayer;
     char operator;
@@ -87,17 +57,10 @@ class WordOperatorCheckStateLayer extends StateLayer {
     @Override
     public void punctuation(char punctuation) {
         if (punctuation == operator) {
-            documentStatement.replaceLayer(handleAreaLayer.handleAreaLayer = new HandleAreaLayer(documentStatement));
+            handleAreaLayer.parseSource();
         }
         else {
             unexpected();
         }
-    }
-}
-
-class SourceHandlerStateLayer extends StateLayer {
-
-    SourceHandlerStateLayer(DocumentStatement statement) {
-        super(statement);
     }
 }

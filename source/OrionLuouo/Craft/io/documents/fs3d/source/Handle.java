@@ -37,6 +37,19 @@ interface FinalValueHandle extends Handle, FS3DObject {
 
 interface DigitHandle extends Handle, Operator {}
 
+record FinalObjectHandle(FS3DObject value) implements FinalValueHandle {
+
+    @Override
+    public FS3DType getType() {
+        return value.getType();
+    }
+
+    @Override
+    public FS3DObject getValue() {
+        return value;
+    }
+}
+
 record FinalIntegerHandle(int value) implements FinalValueHandle, DigitHandle {
     @Override
     public FS3DType getType() {

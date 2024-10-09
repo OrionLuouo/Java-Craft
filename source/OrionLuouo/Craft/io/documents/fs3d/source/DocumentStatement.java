@@ -138,6 +138,10 @@ public class DocumentStatement extends FS3Document implements Statement {
         currentLayer = layer;
     }
 
+    protected void toAreaLayer() {
+        currentLayer = currentAreaLayer;
+    }
+
     public void input(char c) {
         wordParser.input(c);
     }

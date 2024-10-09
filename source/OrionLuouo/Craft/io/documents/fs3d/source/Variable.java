@@ -18,6 +18,9 @@ public interface Variable {
 
     FS3DType getType();
     void assignValue(FS3DObject value);
+    default boolean isFunctionVariable() {
+        return false;
+    }
     default void assignFunctionInstance(FunctionInstance functionInstance) {
         assignValue(functionInstance.invoke(null));
     }
@@ -34,6 +37,11 @@ class FunctionVariable implements Variable {
     @Override
     public void assignValue(FS3DObject value) {
         functionInstance = new FinalFunctionInstance(value);
+    }
+
+    @Override
+    public boolean isFunctionVariable() {
+        return true;
     }
 
     @Override

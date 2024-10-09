@@ -267,7 +267,6 @@ class SourceHandlerStateLayer extends StateLayer implements HandleParser {
     @Unfinished
     @Override
     public void type(TypeStatement typeStatement) {
-
     }
 
     @Unfinished

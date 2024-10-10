@@ -2,7 +2,7 @@ package OrionLuouo.test.Craft;
 
 import java.io.*;
 
-public class MergeTest {
+public class Merge {
     static char[] buffer = new char[65536];
 
     public static void main(String[] args) throws IOException {

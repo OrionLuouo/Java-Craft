@@ -8,7 +8,6 @@
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/abandoned" />
-      <excludeFolder url="file://$MODULE_DIR$/source/OrionLuouo/Craft/data/container/map" />
       <excludeFolder url="file://$MODULE_DIR$/source/OrionLuouo/Craft/io/documents/fs3d_old" />
     </content>
     <orderEntry type="inheritedJdk" />

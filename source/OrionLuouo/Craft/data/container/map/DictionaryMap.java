@@ -255,9 +255,33 @@ public class DictionaryMap<V> implements Map<CharSequence , V> {
 
     @Override
     public Set<Entry<CharSequence, V>> copy() {
-        Node<V> node , destinationNode;
+        DictionaryMap<V> map = new DictionaryMap<>();
+        map.size = size;
+        Node<V> node , copyNode;
         node = root;
-
-        return null;
+        copyNode = map.root;
+        LinkedList<Node<V>> stack = new LinkedList<>() , copyStack = new LinkedList<>();
+        while (true) {
+            if (node.child != null) {
+                stack.push(node);
+                copyStack.push(copyNode);
+                node = node.child;
+                copyNode = copyNode.child = new Node<>(node.character , node.child , node.child , node.value);
+                continue;
+            }
+            if (node.brother != null) {
+                node = node.brother;
+                copyNode = copyNode.brother = new Node<>(node.character , node.child , node.child , node.value);
+                continue;
+            }
+            if (stack.isEmpty()) {
+                break;
+            }
+            do {
+                node = stack.pop();
+                copyNode = copyStack.pop();
+            } while (node.brother == null);
+        }
+        return map;
     }
 }

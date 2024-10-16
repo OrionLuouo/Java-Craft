@@ -85,3 +85,33 @@ public class GrammarParser {
         documentStatement.currentLayer.punctuation(punctuation);
     }
 }
+
+class KeywordsShieldedGrammarParser extends GrammarParser {
+    KeywordsShieldedGrammarParser(DocumentStatement documentStatement) {
+        super(documentStatement);
+    }
+
+    @Override
+    void input(String word) {
+        Object cache = 0;
+        if ((cache = FunctionInstance.FunctionKernel.FUNCTIONS.get(word)) != null) {
+            documentStatement.currentLayer.function(((CouplePair<Class<FunctionInstance> , Integer>)cache).valueB());
+            return;
+        }
+        if ((cache = documentStatement.types.get(word)) != null) {
+            documentStatement.currentLayer.type((TypeStatement) cache);
+            return;
+        }
+        if ((cache = documentStatement.variables.get(word)) != null) {
+            documentStatement.currentLayer.variable((Variable) cache);
+            return;
+        }
+        if (word.matches("[a-zA-Z][a-zA-Z0-9_]*]")) {
+            documentStatement.currentLayer.newIdentifier(word);
+        }
+        else {
+            documentStatement.currentLayer.token(word);
+        }
+        documentStatement.grammarParser = new GrammarParser(documentStatement);
+    }
+}

@@ -7,6 +7,7 @@ import OrionLuouo.Craft.system.annotation.Unfinished;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -206,6 +207,61 @@ public class HandleAreaLayer extends AreaLayer implements HandleParser {
     public Handle get() {
         return handle;
     }
+
+    @Override
+    public void token(String token) {
+        try {
+            int value = Integer.parseInt(token);
+            handle = new FinalIntegerHandle(value);
+            documentStatement.retractLayer();
+            return;
+        } catch (NumberFormatException e) {
+            documentStatement.stateNow = e.getMessage();
+            unexpected();
+        }
+        try {
+            float value = Float.parseFloat(token);
+            handle = new FinalFloatHandle(value);
+            documentStatement.retractLayer();
+            return;
+        } catch (NumberFormatException e) {
+            documentStatement.stateNow = e.getMessage();
+            unexpected();
+        }
+        try {
+            Date date = new Date(token);
+            handle = new FinalDateHandle(new DateObject(date));
+            documentStatement.retractLayer();
+            return;
+        } catch (Exception e) {
+            documentStatement.stateNow = e.getMessage();
+            unexpected();
+        }
+        try {
+            long timestamp = Long.parseLong(token);
+            handle = new FinalTimestampHandle(new TimestampObject(timestamp));
+            documentStatement.retractLayer();
+            return;
+        } catch (NumberFormatException e) {
+            documentStatement.stateNow = e.getMessage();
+            unexpected();
+        }
+        try {
+            boolean value = Boolean.parseBoolean(token);
+            handle = new FinalBooleanHandle(value);
+            documentStatement.retractLayer();
+            return;
+        } catch (Exception e) {
+            documentStatement.stateNow = e.getMessage();
+            unexpected();
+        }
+        if (token.startsWith("\"") && token.endsWith("\"")) {
+            handle = new FinalStringHandle(token);
+            documentStatement.retractLayer();
+            return;
+        }
+        unexpected();
+    }
 }
 
 class HandleProxyAreaLayer extends HandleAreaLayer {
@@ -284,6 +340,68 @@ class SourceHandlerStateLayer extends StateLayer implements HandleParser {
     @Override
     public void function(int function) {
 
+    }
+    
+    record InstantHandleParser(Handle handle) implements HandleParser {
+        @Override
+        public Handle get() {
+            return handle;
+        }
+    }
+    
+    @Override
+    public void token(String token) {
+        try {
+            int value = Integer.parseInt(token);
+            parser = new InstantHandleParser(new FinalIntegerHandle(value));
+            documentStatement.retractLayer();
+            return;
+        } catch (NumberFormatException e) {
+            documentStatement.stateNow = e.getMessage();
+            unexpected();
+        }
+        try {
+            float value = Float.parseFloat(token);
+            parser = new InstantHandleParser(new FinalFloatHandle(value));
+            documentStatement.retractLayer();
+            return;
+        } catch (NumberFormatException e) {
+            documentStatement.stateNow = e.getMessage();
+            unexpected();
+        }
+        try {
+            Date date = new Date(token);
+            parser = new InstantHandleParser(new FinalDateHandle(new DateObject(date)));
+            documentStatement.retractLayer();
+            return;
+        } catch (Exception e) {
+            documentStatement.stateNow = e.getMessage();
+            unexpected();
+        }
+        try {
+            long timestamp = Long.parseLong(token);
+            parser = new InstantHandleParser(new FinalTimestampHandle(new TimestampObject(timestamp)));
+            documentStatement.retractLayer();
+            return;
+        } catch (NumberFormatException e) {
+            documentStatement.stateNow = e.getMessage();
+            unexpected();
+        }
+        try {
+            boolean value = Boolean.parseBoolean(token);
+            parser = new InstantHandleParser(new FinalBooleanHandle(value));
+            documentStatement.retractLayer();
+            return;
+        } catch (Exception e) {
+            documentStatement.stateNow = e.getMessage();
+            unexpected();
+        }
+        if (token.startsWith("\"") && token.endsWith("\"")) {
+            parser = new InstantHandleParser(new FinalStringHandle(token));
+            documentStatement.retractLayer();
+            return;
+        }
+        unexpected();
     }
 }
 

@@ -37,6 +37,9 @@ class BlankParser implements WordParser {
                     documentStatement.grammarParser.input(builder.toString());
                     builder = new StringBuilder();
                 }
+                if (c == '$') {
+                    documentStatement.grammarParser = new KeywordsShieldedGrammarParser(documentStatement);
+                }
                 documentStatement.grammarParser.input(c);
             }
             else {

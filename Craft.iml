@@ -9,6 +9,7 @@
       <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/abandoned" />
       <excludeFolder url="file://$MODULE_DIR$/source/OrionLuouo/Craft/io/documents/fs3d_old" />
+      <excludeFolder url="file://$MODULE_DIR$/source/OrionLuouo/Craft/io/documents/fs3d" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

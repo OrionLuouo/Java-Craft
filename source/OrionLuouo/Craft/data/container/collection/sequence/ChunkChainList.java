@@ -31,11 +31,18 @@ public class ChunkChainList<E> implements List<E> {
     }
 
     public ChunkChainList(int chunkSize) {
-        root = new Chunk(0 , root);
+        root = new Chunk(0 , null);
         root.fore = root;
         size = 0;
         tailIndex = 0;
         this.chunkSize = chunkSize < 0 ? DEFAULT_CHUNK_SIZE : chunkSize;
+        root.next = tail = new Chunk(chunkSize , root);
+    }
+
+    @Override
+    public void clean() {
+        size = 0;
+        headIndex = 0;
         root.next = tail = new Chunk(chunkSize , root);
     }
 

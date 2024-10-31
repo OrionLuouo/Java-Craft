@@ -3,7 +3,9 @@ package OrionLuouo.Craft.data.container;
 import OrionLuouo.Craft.data.Container;
 import OrionLuouo.Craft.data.Iterator;
 
-public interface Collection<E> extends Container<E> {
+import java.lang.ref.Cleaner;
+
+public interface Collection<E> extends Container<E> , Cleaner.Cleanable {
     void add(E element);
     default void add(Container<E> container) {
         add(container.size() , container.iterator());

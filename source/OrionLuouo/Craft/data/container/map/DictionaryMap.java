@@ -56,6 +56,12 @@ public class DictionaryMap<V> implements Map<CharSequence , V> {
         return node;
     }
 
+    @Override
+    public void clean() {
+        size = 0;
+        root.child = null;
+    }
+
     Node<V> getNode(CharSequence charSequence) {
         PrimitiveIterator.OfInt iterator = charSequence.chars().iterator();
         Node node = root;

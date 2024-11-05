@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/Craft.iml" filepath="$PROJECT_DIR$/Craft.iml" />
+      <module fileurl="file://$PROJECT_DIR$/StructuredDocumentCompiler/StructuredDocumentCompiler.iml" filepath="$PROJECT_DIR$/StructuredDocumentCompiler/StructuredDocumentCompiler.iml" />
     </modules>
   </component>
 </project>

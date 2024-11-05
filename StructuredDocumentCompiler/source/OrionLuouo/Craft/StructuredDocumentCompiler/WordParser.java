@@ -5,7 +5,7 @@ import java.util.Collection;
 import java.util.Iterator;
 
 public interface WordParser {
-    void input(char character);
+    void input(char character) throws SDCException;
 }
 
 class BlankWordParser implements WordParser {
@@ -39,7 +39,7 @@ class BlankWordParser implements WordParser {
     }
 
     @Override
-    public void input(char character) {
+    public void input(char character) throws SDCException {
         if (((INDEX_DELIMITERS[(character & 0x40) == 0 ? 0 : 1] >> character & 0x3F) & 1) != 0) {
             if (((INDEX_BLANKS[(character & 0x40) == 0 ? 0 : 1] >> character & 0x3F) & 1) != 0) {
                 if (!builder.isEmpty()) {

@@ -4,12 +4,12 @@ import OrionLuouo.Craft.system.annotation.Unfinished;
 
 public class SemanticRegex {
     @Unfinished
-    public static SemanticRegex compile(String regex) {
+    public static SemanticRegex compile(String regex) throws SDCException {
         return null;
     }
 
     @Unfinished
-    public static SemanticRegex compile(String regex, String... units) {
+    public static SemanticRegex compile(String regex, String... units) throws SDCException {
 
         return null;
     }

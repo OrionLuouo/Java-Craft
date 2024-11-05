@@ -39,8 +39,8 @@ public class Compiler {
      * @throws SDCException All the exceptions occurred in the compiling process will be thrown here,
      *                      and the invoker should catch and handle them properly.
      */
-    public void input(Stream<Character> stream) {
-        stream.forEach(wordParser::input);
+    public void input(Stream<Character> stream) throws SDCException {
+        stream.forEach(character -> wordParser.input(character));
     }
 
     /**

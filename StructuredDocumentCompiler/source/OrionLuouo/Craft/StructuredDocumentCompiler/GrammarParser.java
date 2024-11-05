@@ -1,21 +1,32 @@
 package OrionLuouo.Craft.StructuredDocumentCompiler;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class GrammarParser {
-    List<Map<String , ?>> wordGroups;
+    public record WordType(String name) {
+        @Override
+        public int hashCode() {
+            return name.hashCode();
+        }
+    }
 
-    GrammarParser() {
-        wordGroups = new ArrayList<>();
+    Compiler compiler;
+    Map<WordType , Map<String , ?>> wordGroups;
+
+    GrammarParser(Compiler compiler) {
+        wordGroups = new LinkedHashMap<>();
     }
 
     void word(String word) {
 
     }
 
-    void punctuation(char punctuation) {
+    public WordType getType(String name) {
+        return new WordType(name);
+    }
 
+    public void setWordGroup(Map<String , ?> wordGroup , WordType type) {
+        wordGroups.put(type, wordGroup);
     }
 }

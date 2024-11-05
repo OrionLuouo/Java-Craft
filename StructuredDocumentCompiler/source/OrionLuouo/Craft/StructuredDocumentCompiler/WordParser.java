@@ -1,91 +1,128 @@
 package OrionLuouo.Craft.StructuredDocumentCompiler;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
 
-/**
- * The first level in the compilers chain.
- * To accept the character-type raw data and conclude them into words.
- */
 public interface WordParser {
-    char[] CHARACTERS_BLANK = new char[]{' ', '\t', '\n', '\r', '\f'}
-            , CHARACTERS_PUNCTUATION = new char[]{'!' , '"' , '$' , '\'' , '%' , '^' , '&' , '*' , '(' , ')' , '-' , '+' , '=' , '[' , ']' , '{' , '}' , '#' , '~' , ';' , ':' , ',' , '.' , '<' , '>' , '/' , '?'};
-
-    long[] INDEXES_BLANK = compileIndex(CHARACTERS_BLANK)
-            , INDEXES_DELIMITER = compileIndex(CHARACTERS_BLANK , CHARACTERS_PUNCTUATION);
-
-    static long[] compileIndex(char[]... characterSets) {
-        long[] indexes = new long[2];
-        for (char[] set : characterSets) {
-            for (char character : set) {
-                indexes[(character & 0x0040) >> 6] |= 1L << (character & 0x003F);
-            }
-        }
-        return indexes;
-    }
-
-    static boolean contains(long[] indexes, char character) {
-        return (indexes[(character & 0x0040) >> 6] & (1L << (character & 0x003F))) != 0;
-    }
-
-    void accept(char character);
+    void input(char character);
 }
 
 class BlankWordParser implements WordParser {
-    StringBuilder builder;
-    GrammarParser grammarParser;
+    static final Collection<Character> CHARACTER_BLANKS = Arrays.asList(' ' , '\r' , '\n' , '\t')
+            , CHARACTER_PUNCTUATIONS = Arrays.asList('¬' , '~' , '`' , '!' , '"' , '£' , '$' , '%' , '^' , '&' , '*' , '(' , ')' , '-' , '_' , '=' , '+' , '[' , ']' , '{' , '}' , ';' , ':' , '\'' , '@' , ',' , '<' , '.' , '>' , '/' , '?' , '|' , '\\');
+    static final long[] INDEX_DELIMITERS = compileIndex(CHARACTER_BLANKS , CHARACTER_PUNCTUATIONS)
+            , INDEX_BLANKS = compileIndex(CHARACTER_BLANKS);
 
-    BlankWordParser() {
+    @SafeVarargs
+    static long[] compileIndex(Collection<Character>... characters) {
+        long[] index = new long[2];
+        for (Collection<Character> collection : characters) {
+            Iterator<Character> iterator = collection.iterator();
+            while (iterator.hasNext()) {
+                char character = iterator.next();
+                if (character > 127) {
+                    throw new RuntimeException("SDCException-UnexpectedRuntimeError: Character's code out of range 127 while compiling WordParser's indexes.");
+                }
+                index[(character & 0x40) == 0 ? 0 : 1] |= 1L << (character & 0x3F);
+            }
+        }
+        return index;
+    }
+
+    Compiler compiler;
+    StringBuilder builder = new StringBuilder();
+
+    BlankWordParser(Compiler compiler) {
+        this.compiler = compiler;
         builder = new StringBuilder();
     }
 
     @Override
-    public void accept(char character) {
-        if (WordParser.contains(WordParser.INDEXES_DELIMITER, character)) {
-            if (WordParser.contains(WordParser.INDEXES_BLANK, character)) {
+    public void input(char character) {
+        if (((INDEX_DELIMITERS[(character & 0x40) == 0 ? 0 : 1] >> character & 0x3F) & 1) != 0) {
+            if (((INDEX_BLANKS[(character & 0x40) == 0 ? 0 : 1] >> character & 0x3F) & 1) != 0) {
                 if (!builder.isEmpty()) {
-                    grammarParser.word(builder.toString());
-                    builder = new StringBuilder();
+                    compiler.grammarParser.word(builder.toString());
+                    builder.setLength(0);
                 }
                 return;
             }
             if (!builder.isEmpty()) {
-                grammarParser.word(builder.toString());
-                builder = new StringBuilder();
+                compiler.grammarParser.word(builder.toString());
+                builder.setLength(0);
             }
-            grammarParser.punctuation(character);
+            if (character == '/') {
+                compiler.wordParser = new PreAnnotationWordParser(compiler , this);
+                return;
+            }
+            compiler.semanticRegex.matches(character);
+            return;
         }
+        builder.append(character);
     }
 }
 
-class LineAnnotationWordParser extends BlankWordParser {
+class PreAnnotationWordParser extends BlankWordParser {
+    BlankWordParser blankWordParser;
+
+    PreAnnotationWordParser(Compiler compiler , BlankWordParser blankWordParser) {
+        super(compiler);
+        this.blankWordParser = blankWordParser;
+    }
 
     @Override
-    public void accept(char character) {
-        if (character == '\n' || character == '\r') {
-            documentStatement.wordParser = new BlankWordParser(documentStatement);
+    public void input(char character) {
+        if (character == '/') {
+            compiler.wordParser = new LineAnnotationWordParser(compiler , this);
+            return;
         }
-    }
-}
-
-class AreaAnnotationWordParser extends BlankWordParser {
-    AreaAnnotationWordParser(DocumentStatement documentStatement) {
-        super(documentStatement);
-    }
-
-    @Override
-    public void accept(char character) {
         if (character == '*') {
-            documentStatement.wordParser = new PreAreaAnnotationEndWordParser(documentStatement);
+            compiler.wordParser = new AreaAnnotationWordParser(compiler , this);
+            return;
+        }
+        compiler.semanticRegex.matches('/');
+        compiler.wordParser = blankWordParser;
+    }
+}
+
+class LineAnnotationWordParser extends PreAnnotationWordParser {
+
+    LineAnnotationWordParser(Compiler compiler, BlankWordParser blankWordParser) {
+        super(compiler, blankWordParser);
+    }
+
+    @Override
+    public void input(char character) {
+        if (character == 'r' || character == 'n') {
+            compiler.wordParser = blankWordParser;
+            return;
         }
     }
 }
 
-class PreAreaAnnotationEndWordParser extends BlankWordParser {
-    PreAreaAnnotationEndWordParser(DocumentStatement documentStatement) {
-        super(documentStatement);
+class AreaAnnotationWordParser extends PreAnnotationWordParser {
+
+    AreaAnnotationWordParser(Compiler compiler, BlankWordParser blankWordParser) {
+        super(compiler, blankWordParser);
     }
 
     @Override
-    public void accept(char character) {
-        documentStatement.wordParser = character == '/' ? new BlankWordParser(documentStatement) : new AreaAnnotationWordParser(documentStatement);
+    public void input(char character) {
+        if (character == '*') {
+            compiler.wordParser = new PreAreaAnnotationEndWordParser(compiler , this);
+            return;
+        }
+    }
+}
+
+class PreAreaAnnotationEndWordParser extends AreaAnnotationWordParser {
+    PreAreaAnnotationEndWordParser(Compiler compiler, BlankWordParser blankWordParser) {
+        super(compiler, blankWordParser);
+    }
+
+    @Override
+    public void input(char character) {
+        compiler.wordParser = character == '/' ? blankWordParser : new AreaAnnotationWordParser(compiler, blankWordParser);
     }
 }

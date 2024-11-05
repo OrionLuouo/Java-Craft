@@ -1,17 +1,35 @@
 package OrionLuouo.Craft.StructuredDocumentCompiler;
 
-public interface SemanticRegex {
-    static SemanticRegex compile(String regex) {
+import OrionLuouo.Craft.system.annotation.Unfinished;
+
+public class SemanticRegex {
+    @Unfinished
+    public static SemanticRegex compile(String regex) {
+        return null;
+    }
+
+    @Unfinished
+    public static SemanticRegex compile(String regex, String... units) {
 
         return null;
     }
 
-    void unit(Object unit);
+    @Unfinished
+    public SemanticRegex bifurcate(SemanticRegex regex) {
 
-    void punctuation(char punctuation);
-}
+        return regex;
+    }
 
-class SemanticUnit {
-    SemanticUnit brother , child;
-    int regexIndex , branchIndex;
+    @Unfinished
+    public void addSemantics(int regexIndex) {
+
+    }
+
+    void matches(char punctuation) {
+
+    }
+
+    void matches(Object object , GrammarParser.WordType type) {
+
+    }
 }

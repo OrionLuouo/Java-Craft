@@ -6,9 +6,11 @@ import OrionLuouo.Craft.system.annotation.Unfinished;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.util.Map;
 import java.util.stream.Stream;
 
 public class Compiler {
+    Map<String , SemanticRegex> regexMap;
     WordParser wordParser;
     GrammarParser grammarParser;
     SemanticRegex semanticRegex;
@@ -117,11 +119,11 @@ public class Compiler {
         (structureLayer = layer).reload(this);
     }
 
-    public void setSemanticRegex(SemanticRegex semanticRegex) {
-        this.semanticRegex = semanticRegex;
-    }
-
     public GrammarParser getGrammarParser() {
         return grammarParser;
+    }
+
+    public void loadRegex(String name) {
+
     }
 }

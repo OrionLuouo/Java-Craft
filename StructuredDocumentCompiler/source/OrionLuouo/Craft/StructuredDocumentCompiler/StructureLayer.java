@@ -14,6 +14,6 @@ public interface StructureLayer {
      * @param compiler The Compiler it is in.
      */
     void reload(Compiler compiler);
-    void parseSemantics(SemanticMatch match , int semanticIndex , int branchIndex);
+    void parseSemantics(SemanticMatch match , int semanticIndex);
     void logout(Compiler compiler);
 }

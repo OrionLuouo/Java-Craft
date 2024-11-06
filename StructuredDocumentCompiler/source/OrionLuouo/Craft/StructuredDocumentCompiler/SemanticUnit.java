@@ -1,5 +1,6 @@
 package OrionLuouo.Craft.StructuredDocumentCompiler;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public abstract class SemanticUnit {
@@ -7,6 +8,7 @@ public abstract class SemanticUnit {
     int regexIndex;
 
     SemanticUnit() {
+        children = new ArrayList<>();
         regexIndex = -1;
     }
 
@@ -14,13 +16,38 @@ public abstract class SemanticUnit {
 
     }
 
-    void matches(SemanticMatch match , Object object , GrammarParser.WordType type) {
-
-    }
+    abstract void matches(SemanticMatch match , Object object , GrammarParser.WordType type);
 
     boolean isPotential() {
         return false;
     }
 
     abstract SemanticMatchUnit.MakeupUnit makeup(SemanticMatchUnit matchUnit);
+
+    boolean isPunctuation() {
+        return false;
+    }
+}
+
+class PunctuationSemanticUnit extends SemanticUnit {
+    char punctuation;
+
+    PunctuationSemanticUnit(char punctuation) {
+        this.punctuation = punctuation;
+    }
+
+    @Override
+    void matches(SemanticMatch match, char punctuation) {
+        match.state = punctuation == this.punctuation ? SemanticMatch.MatchState.STATE_COMPLETE : SemanticMatch.MatchState.STATE_MISMATCH;
+    }
+
+    @Override
+    void matches(SemanticMatch match, Object object, GrammarParser.WordType type) {
+        match.state = SemanticMatch.MatchState.STATE_MISMATCH;
+    }
+
+    @Override
+    SemanticMatchUnit.MakeupUnit makeup(SemanticMatchUnit matchUnit) {
+        return new SemanticMatchUnit.MakeupUnit.PunctuationMakeupUnit(punctuation);
+    }
 }

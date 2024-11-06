@@ -6,6 +6,7 @@ import OrionLuouo.Craft.system.annotation.Unfinished;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -18,6 +19,7 @@ public class Compiler {
     Stack<StructureLayer> layerStack;
 
     public Compiler() {
+        regexMap = new HashMap<>();
         wordParser = new BlankWordParser(this);
         grammarParser = new GrammarParser(this);
         layerStack = new ChunkChainList<>(16);
@@ -88,7 +90,9 @@ public class Compiler {
      */
     public void retractLayer() {
         structureLayer.logout(this);
-        (structureLayer = layerStack.pop()).reload(this);
+        if (layerStack.size() > 0) {
+            (structureLayer = layerStack.pop()).reload(this);
+        }
     }
 
     /**
@@ -102,7 +106,9 @@ public class Compiler {
      *              It should be on the same level with the current one.
      */
     public void coverLayer(StructureLayer layer) {
-        structureLayer.logout(this);
+        if (structureLayer != null) {
+            structureLayer.logout(this);
+        }
         (structureLayer = layer).reload(this);
     }
 
@@ -124,6 +130,11 @@ public class Compiler {
     }
 
     public void loadRegex(String name) {
+        semanticRegex = regexMap.get(name);
+        semanticRegex.reset();
+    }
 
+    public void registerRegex(SemanticRegex regex , String name) {
+        regexMap.put(name, regex);
     }
 }

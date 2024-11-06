@@ -10,7 +10,7 @@ public interface WordParser {
 
 class BlankWordParser implements WordParser {
     static final Collection<Character> CHARACTER_BLANKS = Arrays.asList(' ' , '\r' , '\n' , '\t')
-            , CHARACTER_PUNCTUATIONS = Arrays.asList('¬' , '~' , '`' , '!' , '"' , '£' , '$' , '%' , '^' , '&' , '*' , '(' , ')' , '-' , '_' , '=' , '+' , '[' , ']' , '{' , '}' , ';' , ':' , '\'' , '@' , ',' , '<' , '.' , '>' , '/' , '?' , '|' , '\\');
+            , CHARACTER_PUNCTUATIONS = Arrays.asList('~' , '`' , '!' , '"' , '$' , '%' , '^' , '&' , '*' , '(' , ')' , '-' , '_' , '=' , '+' , '[' , ']' , '{' , '}' , ';' , ':' , '\'' , '@' , ',' , '<' , '.' , '>' , '/' , '?' , '|' , '\\');
     static final long[] INDEX_DELIMITERS = compileIndex(CHARACTER_BLANKS , CHARACTER_PUNCTUATIONS)
             , INDEX_BLANKS = compileIndex(CHARACTER_BLANKS);
 
@@ -22,7 +22,7 @@ class BlankWordParser implements WordParser {
             while (iterator.hasNext()) {
                 char character = iterator.next();
                 if (character > 127) {
-                    throw new RuntimeException("SDCException-UnexpectedRuntimeError: Character's code out of range 127 while compiling WordParser's indexes.");
+                    throw new RuntimeException("SDCException-UnexpectedRuntimeError: Character's code out of range 127 while compiling WordParser's indexes.\n\tCharacter: " + character);
                 }
                 index[(character & 0x40) == 0 ? 0 : 1] |= 1L << (character & 0x3F);
             }

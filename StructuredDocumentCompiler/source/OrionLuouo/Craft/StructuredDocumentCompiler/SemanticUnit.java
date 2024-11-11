@@ -1,5 +1,7 @@
 package OrionLuouo.Craft.StructuredDocumentCompiler;
 
+import OrionLuouo.Craft.StructuredDocumentCompiler.exception.SemanticMismatchException;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,5 +51,23 @@ class PunctuationSemanticUnit extends SemanticUnit {
     @Override
     SemanticMatchUnit.MakeupUnit makeup(SemanticMatchUnit matchUnit) {
         return new SemanticMatchUnit.MakeupUnit.PunctuationMakeupUnit(punctuation);
+    }
+}
+
+class ElementSemanticUnit extends SemanticUnit {
+    GrammarParser.WordType type;
+
+    @Override
+    void matches(SemanticMatch match, Object object, GrammarParser.WordType type) {
+        if (this.type == type) {
+
+        }
+        else {
+            throw new SemanticMismatchException("An element of type " + this.type.name() + " is needed, yet one of type " + type.name() + " being provided.");
+        }
+    }
+
+    @Override
+    SemanticMatchUnit.MakeupUnit makeup(SemanticMatchUnit matchUnit) {
     }
 }

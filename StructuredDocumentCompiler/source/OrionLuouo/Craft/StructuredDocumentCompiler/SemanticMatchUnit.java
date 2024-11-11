@@ -21,3 +21,11 @@ public class SemanticMatchUnit {
         }
     }
 }
+
+class ElementSemanticMatchUnit extends SemanticMatchUnit {
+    final Object value;
+
+    ElementSemanticMatchUnit(Object value) {
+        this.value = value;
+    }
+}

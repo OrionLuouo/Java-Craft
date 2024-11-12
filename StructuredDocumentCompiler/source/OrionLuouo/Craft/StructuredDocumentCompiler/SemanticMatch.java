@@ -8,19 +8,15 @@ import java.util.LinkedList;
 
 public class SemanticMatch extends SemanticMatchUnit {
     enum MatchState {
-        STATE_INCOMPLETE , STATE_COMPLETE , STATE_MISMATCH;
     }
 
     List<SemanticMatchUnit> matchUnits;
-    int regexIndex /*, uncertainMatchCount*/;
-    //Stack<SemanticUnit> uncertainMatchedUnits;
+    int regexIndex;
     MatchState state;
 
     SemanticMatch() {
         matchUnits = new ChunkChainList<>();
         regexIndex = -1;
-        //uncertainMatchCount = 0;
-        //uncertainMatchedUnits = new CycledArrayList<>();
     }
 
     public Iterator<SemanticMatchUnit> iterator() {

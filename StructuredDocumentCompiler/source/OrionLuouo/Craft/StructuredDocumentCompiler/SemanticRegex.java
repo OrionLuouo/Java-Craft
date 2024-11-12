@@ -10,7 +10,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 
-public class SemanticRegex extends SemanticUnit {
+public class SemanticRegex {
     Compiler compiler;
     SemanticUnit[] roots , leaves;
     SemanticUnit unitNow;
@@ -119,154 +119,12 @@ public class SemanticRegex extends SemanticUnit {
     }
 
     final boolean checkMatch() {
-        switch (match.state) {
-            case STATE_COMPLETE -> {
-                /* Maybe this is of no use.
-                if (match.regexIndex != -1) {
-                    match.uncertainMatchCount++;
-                    match.uncertainMatchedUnits.add(unitNow);
-                }
-                if (unitNow.regexIndex != -1) {
-                    boolean potential = false;
-                    Iterator<SemanticUnit> iterator = unitNow.children.iterator();
-                    while (iterator.hasNext()) {
-                        potential |= iterator.next().isPotential();
-                    }
-                    if (potential) {
-                        match.uncertainMatchedUnits.clean();
-                        match.regexIndex = unitNow.regexIndex;
-                        match.uncertainMatchCount = 0;
-                    }
-                    else {
-                        compiler.structureLayer.parseSemantics(match , unitNow.regexIndex);
-                    }
-                }
-                 */
-                if (unitNow.regexIndex != -1 && unitNow.children.isEmpty()) {
-                    compiler.structureLayer.parseSemantics(match , unitNow.regexIndex);
-                }
-            }
-            case STATE_INCOMPLETE -> {
-            }
-            case STATE_MISMATCH -> {
-                /*
-                /*
-                To catch up the mismatched content,
-                and rematches them with the new regex.
-                The latest one word/punctuation will be makeup by method:matches(),
-                not using MakeupMatchUnit.
-                * /
-                match.uncertainMatchCount++;
-                if (match.uncertainMatchedUnits.size() == 0) {
-                    throw new SemanticMismatchException("Document contents not corresponding to the regex, QAQ!");
-                }
-                else {
-                    Stack<SemanticMatchUnit.MakeupUnit> makeupUnitList = new ChunkChainList<>();
-                    while (match.uncertainMatchCount-- > 0) {
-                        makeupUnitList.add(match.uncertainMatchedUnits.pop().makeup(match.matchUnits.pop()));
-                    }
-                    compiler.structureLayer.parseSemantics(match , unitNow.regexIndex);
-                    while (makeupUnitList.size() != 0) {
-                        makeupUnitList.pop().input(compiler.semanticRegex);
-                    }
-                }
-                return false;
-                */
-                throw new SemanticMismatchException("Document contents not corresponding to the regex!QAQ!");
-            }
-            default -> {
-                throw new SDCException("SDCException-UnexpectedRuntimeError: Unknown state occurred in the SemanticRegex compiling process.");
-            }
-        }
-        return true;
+        return false;
     }
 
     void matches(char punctuation) {
-        if (unitNow == null) {
-            for (SemanticUnit unit : roots) {
-                unit.matches(match , punctuation);
-                if (match.state != SemanticMatch.MatchState.STATE_MISMATCH) {
-                    unitNow = unit;
-                    break;
-                }
-            }
-            return;
-        }
-        if (match.state == SemanticMatch.MatchState.STATE_COMPLETE) {
-            if (unitNow.children.isEmpty()) {
-                throw new IncompleteRegexException("QAQ!");
-            }
-            Iterator<SemanticUnit> iterator = unitNow.children.iterator();
-            while (iterator.hasNext()) {
-                SemanticUnit unit = iterator.next();
-                unit.matches(match , punctuation);
-                if (match.state != SemanticMatch.MatchState.STATE_MISMATCH) {
-                    unitNow = unit;
-                    if(!checkMatch()) {
-                        compiler.semanticRegex.matches(punctuation);
-                        return;
-                    }
-                    unitNow = unit;
-                    return;
-                }
-            }
-            throw new SemanticMismatchException("QAQ!");
-        }
-        else {
-            unitNow.matches(match , punctuation);
-            if(!checkMatch()) {
-                compiler.semanticRegex.matches(punctuation);
-                return;
-            }
-        }
     }
 
     void matches(Object object , GrammarParser.WordType type) {
-        if (unitNow == null) {
-            for (SemanticUnit unit : roots) {
-                unit.matches(match , object , type);
-                if (match.state != SemanticMatch.MatchState.STATE_MISMATCH) {
-                    unitNow = unit;
-                    break;
-                }
-            }
-            return;
-        }
-        if (match.state == SemanticMatch.MatchState.STATE_COMPLETE) {
-            if (unitNow.children.isEmpty()) {
-                throw new IncompleteRegexException("QAQ!");
-            }
-            Iterator<SemanticUnit> iterator = unitNow.children.iterator();
-            while (iterator.hasNext()) {
-                SemanticUnit unit = iterator.next();
-                unit.matches(match , object , type);
-                if (match.state != SemanticMatch.MatchState.STATE_MISMATCH) {
-                    unitNow = unit;
-                    if(!checkMatch()) {
-                        compiler.semanticRegex.matches(object , type);
-                        return;
-                    }
-                    unitNow = unit;
-                    return;
-                }
-            }
-            throw new SemanticMismatchException("QAQ!");
-        }
-        else {
-            unitNow.matches(match , object , type);
-            if(!checkMatch()) {
-                compiler.semanticRegex.matches(object , type);
-                return;
-            }
-        }
-    }
-
-    @Override
-    void matches(SemanticMatch match, Object object, GrammarParser.WordType type) {
-    }
-
-    @Override
-    void matches(SemanticMatch match , char punctuation) {
-
     }
 }

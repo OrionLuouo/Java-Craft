@@ -1,7 +1,5 @@
 package OrionLuouo.Craft.StructuredDocumentCompiler;
 
-import OrionLuouo.Craft.StructuredDocumentCompiler.exception.SemanticMismatchException;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,16 +13,18 @@ public abstract class SemanticUnit {
     }
 
     void matches(SemanticMatch match , char punctuation) {
-
+        match.state = SemanticMatch.MatchState.STATE_MISMATCH;
     }
 
     abstract void matches(SemanticMatch match , Object object , GrammarParser.WordType type);
 
+    /*
     boolean isPotential() {
         return false;
     }
+     */
 
-    abstract SemanticMatchUnit.MakeupUnit makeup(SemanticMatchUnit matchUnit);
+    //abstract SemanticMatchUnit.MakeupUnit makeup(SemanticMatchUnit matchUnit);
 
     boolean isPunctuation() {
         return false;
@@ -48,10 +48,12 @@ class PunctuationSemanticUnit extends SemanticUnit {
         match.state = SemanticMatch.MatchState.STATE_MISMATCH;
     }
 
+    /*
     @Override
     SemanticMatchUnit.MakeupUnit makeup(SemanticMatchUnit matchUnit) {
         return new SemanticMatchUnit.MakeupUnit.PunctuationMakeupUnit(punctuation);
     }
+     */
 }
 
 class ElementSemanticUnit extends SemanticUnit {
@@ -60,14 +62,103 @@ class ElementSemanticUnit extends SemanticUnit {
     @Override
     void matches(SemanticMatch match, Object object, GrammarParser.WordType type) {
         if (this.type == type) {
-
+            match.matchUnits.add(new ElementSemanticMatchUnit(object));
         }
         else {
-            throw new SemanticMismatchException("An element of type " + this.type.name() + " is needed, yet one of type " + type.name() + " being provided.");
+            match.state = SemanticMatch.MatchState.STATE_MISMATCH;
+        }
+    }
+
+    /*
+    @Override
+    SemanticMatchUnit.MakeupUnit makeup(SemanticMatchUnit matchUnit) {
+        return regex -> {
+            regex.matches(((ElementSemanticMatchUnit) matchUnit).value , type);
+        };
+    }
+     */
+}
+
+class ArbitraryElementSemanticUnit extends SemanticUnit {
+    GrammarParser.WordType type;
+
+    @Override
+    void matches(SemanticMatch match, Object object, GrammarParser.WordType type) {
+        if (this.type == type) {
+            ((ArbitraryElementSemanticMatchUnit) match.matchUnits.getLast()).values.add(object);
+            match.state = SemanticMatch.MatchState.STATE_INCOMPLETE;
+        }
+        else {
+            match.state = SemanticMatch.MatchState.STATE_INCOMPLETE;
+        }
+    }
+}
+
+class ArbitraryPunctuationSemanticUnit extends PunctuationSemanticUnit {
+    ArbitraryPunctuationSemanticUnit(char punctuation) {
+        super(punctuation);
+    }
+
+    @Override
+    public void matches(SemanticMatch match , char punctuation) {
+        if (punctuation == this.punctuation) {
+            match.state = SemanticMatch.MatchState.STATE_INCOMPLETE;
+        }
+        else {
+            match.state = SemanticMatch.MatchState.STATE_MISMATCH;
+        }
+    }
+}
+
+class MergeSemanticUnit extends SemanticRegex {
+    SemanticMatchUnit matchUnit;
+
+    MergeSemanticUnit(Compiler compiler) {
+        super(null);
+        compiler = new Compiler() {
+            {
+                structureLayer = new StructureLayer() {
+                    @Override
+                    public void reload(Compiler compiler) {
+                    }
+
+                    @Override
+                    public void parseSemantics(SemanticMatch match, int semanticIndex) {
+                        matchUnit = match;
+                    }
+
+                    @Override
+                    public void logout(Compiler compiler) {
+                    }
+                };
+            }
+        };
+    }
+
+    @Override
+    void matches(SemanticMatch match, Object object, GrammarParser.WordType type) {
+        matches(object , type);
+        if (matchUnit != null) {
+            match.matchUnits.add(matchUnit);
         }
     }
 
     @Override
-    SemanticMatchUnit.MakeupUnit makeup(SemanticMatchUnit matchUnit) {
+    void matches(SemanticMatch match , char punctuation) {
+        matches(punctuation);
+        if (matchUnit != null) {
+            match.matchUnits.add(matchUnit);
+        }
     }
+}
+
+class ArbitraryMergeSemanticUnit extends MergeSemanticUnit {
+    ArbitraryMergeSemanticMatchUnit matchUnit;
+
+    ArbitraryMergeSemanticUnit(Compiler compiler) {
+        super(compiler);
+        matchUnit = new ArbitraryMergeSemanticMatchUnit();
+    }
+
+    void
 }

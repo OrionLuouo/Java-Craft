@@ -1,8 +1,11 @@
 package OrionLuouo.Craft.StructuredDocumentCompiler;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class SemanticMatchUnit {
+    /*
     interface MakeupUnit {
         void input(SemanticRegex regex);
 
@@ -20,6 +23,25 @@ public class SemanticMatchUnit {
             }
         }
     }
+     */
+
+    public Object get() {
+        return null;
+    }
+
+    public Iterator<Object> iterator() {
+        return new Iterator<Object>() {
+            @Override
+            public boolean hasNext() {
+                return false;
+            }
+
+            @Override
+            public Object next() {
+                return null;
+            }
+        };
+    }
 }
 
 class ElementSemanticMatchUnit extends SemanticMatchUnit {
@@ -27,5 +49,21 @@ class ElementSemanticMatchUnit extends SemanticMatchUnit {
 
     ElementSemanticMatchUnit(Object value) {
         this.value = value;
+    }
+}
+
+class ArbitraryElementSemanticMatchUnit extends SemanticMatchUnit {
+    final List<Object> values;
+
+    ArbitraryElementSemanticMatchUnit() {
+        values = new ArrayList<>();
+    }
+}
+
+class ArbitraryMergeSemanticMatchUnit extends SemanticMatchUnit {
+    List<SemanticMatch> matches;
+
+    ArbitraryMergeSemanticMatchUnit() {
+        matches = new ArrayList<>();
     }
 }

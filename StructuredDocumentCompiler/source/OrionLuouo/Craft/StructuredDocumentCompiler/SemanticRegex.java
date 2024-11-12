@@ -10,7 +10,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 
-public class SemanticRegex {
+public class SemanticRegex extends SemanticUnit {
     Compiler compiler;
     SemanticUnit[] roots , leaves;
     SemanticUnit unitNow;
@@ -121,6 +121,7 @@ public class SemanticRegex {
     final boolean checkMatch() {
         switch (match.state) {
             case STATE_COMPLETE -> {
+                /* Maybe this is of no use.
                 if (match.regexIndex != -1) {
                     match.uncertainMatchCount++;
                     match.uncertainMatchedUnits.add(unitNow);
@@ -140,16 +141,21 @@ public class SemanticRegex {
                         compiler.structureLayer.parseSemantics(match , unitNow.regexIndex);
                     }
                 }
+                 */
+                if (unitNow.regexIndex != -1 && unitNow.children.isEmpty()) {
+                    compiler.structureLayer.parseSemantics(match , unitNow.regexIndex);
+                }
             }
             case STATE_INCOMPLETE -> {
             }
             case STATE_MISMATCH -> {
                 /*
+                /*
                 To catch up the mismatched content,
                 and rematches them with the new regex.
                 The latest one word/punctuation will be makeup by method:matches(),
                 not using MakeupMatchUnit.
-                 */
+                * /
                 match.uncertainMatchCount++;
                 if (match.uncertainMatchedUnits.size() == 0) {
                     throw new SemanticMismatchException("Document contents not corresponding to the regex, QAQ!");
@@ -165,6 +171,8 @@ public class SemanticRegex {
                     }
                 }
                 return false;
+                */
+                throw new SemanticMismatchException("Document contents not corresponding to the regex!QAQ!");
             }
             default -> {
                 throw new SDCException("SDCException-UnexpectedRuntimeError: Unknown state occurred in the SemanticRegex compiling process.");
@@ -251,5 +259,14 @@ public class SemanticRegex {
                 return;
             }
         }
+    }
+
+    @Override
+    void matches(SemanticMatch match, Object object, GrammarParser.WordType type) {
+    }
+
+    @Override
+    void matches(SemanticMatch match , char punctuation) {
+
     }
 }

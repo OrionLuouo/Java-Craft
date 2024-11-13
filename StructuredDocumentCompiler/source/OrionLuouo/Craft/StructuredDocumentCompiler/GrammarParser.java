@@ -20,6 +20,7 @@ public class GrammarParser {
     }
 
     void word(String word) throws SDCException {
+        compiler.wordNow = word;
         Iterator<Map.Entry<WordType , Map<String , ?>>> groupIterator = wordGroups.entrySet().iterator();
         while (groupIterator.hasNext()) {
             Map.Entry<WordType , Map<String , ?>> group = groupIterator.next();

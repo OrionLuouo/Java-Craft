@@ -41,10 +41,15 @@ class BlankWordParser implements WordParser {
     @Override
     public void input(char character) throws SDCException {
         if (((INDEX_DELIMITERS[(character & 0x40) == 0 ? 0 : 1] >> character & 0x3F) & 1) != 0) {
+            compiler.wordNow = character;
             if (((INDEX_BLANKS[(character & 0x40) == 0 ? 0 : 1] >> character & 0x3F) & 1) != 0) {
                 if (!builder.isEmpty()) {
                     compiler.grammarParser.word(builder.toString());
                     builder.setLength(0);
+                }
+                if (character == '\r' || character == '\n') {
+                    compiler.lineCount++;
+                    compiler.lineCharacterCount = 0;
                 }
                 return;
             }
@@ -81,8 +86,10 @@ class PreAnnotationWordParser extends BlankWordParser {
             compiler.wordParser = new AreaAnnotationWordParser(compiler , this);
             return;
         }
+        compiler.wordNow = '/';
         compiler.semanticRegex.matches('/');
         compiler.wordParser = blankWordParser;
+        blankWordParser.input(character);
     }
 }
 
@@ -94,8 +101,10 @@ class LineAnnotationWordParser extends PreAnnotationWordParser {
 
     @Override
     public void input(char character) {
-        if (character == 'r' || character == 'n') {
+        if (character == '\r' || character == '\n') {
             compiler.wordParser = blankWordParser;
+            compiler.lineCount++;
+            compiler.lineCharacterCount = 0;
             return;
         }
     }
@@ -109,6 +118,10 @@ class AreaAnnotationWordParser extends PreAnnotationWordParser {
 
     @Override
     public void input(char character) {
+        if (character == '\r' || character == '\n') {
+            compiler.lineCount++;
+            compiler.lineCharacterCount = 0;
+        }
         if (character == '*') {
             compiler.wordParser = new PreAreaAnnotationEndWordParser(compiler , this);
             return;
@@ -123,6 +136,11 @@ class PreAreaAnnotationEndWordParser extends AreaAnnotationWordParser {
 
     @Override
     public void input(char character) {
+        if (character == '\r' || character == '\n') {
+            compiler.lineCount++;
+            compiler.lineCharacterCount = 0;
+            return;
+        }
         compiler.wordParser = character == '/' ? blankWordParser : new AreaAnnotationWordParser(compiler, blankWordParser);
     }
 }

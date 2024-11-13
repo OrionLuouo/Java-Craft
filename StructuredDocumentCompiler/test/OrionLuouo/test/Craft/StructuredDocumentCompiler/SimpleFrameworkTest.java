@@ -32,5 +32,7 @@ public class SimpleFrameworkTest {
             }
         });
         compiler.input("&&^^%");
+        compiler.loadRegex("test");
+        compiler.input("&&^^%");
     }
 }

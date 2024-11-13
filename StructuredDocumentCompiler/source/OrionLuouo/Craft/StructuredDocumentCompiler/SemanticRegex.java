@@ -1,23 +1,220 @@
 package OrionLuouo.Craft.StructuredDocumentCompiler;
 
 import OrionLuouo.Craft.StructuredDocumentCompiler.exception.SemanticMismatchException;
+import OrionLuouo.Craft.data.container.collection.sequence.CycledArrayList;
+import OrionLuouo.Craft.data.container.collection.sequence.Queue;
 import OrionLuouo.Craft.system.annotation.Unfinished;
 
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.*;
 import java.util.function.BiConsumer;
 
 public class SemanticRegex {
-    Compiler compiler;
+    static Compiler compiler;
     SemanticUnit[] roots , leaves;
-    SemanticUnit unitNow;
+    SemanticUnit unitNow , root;
     SemanticMatch match;
+    OrionLuouo.Craft.data.container.collection.sequence.List<MatchedUnit> matchedUnitQueue;
+
+    interface MatchedUnit {
+        void rematch(SemanticRegex regex);
+    }
+
+    record PunctuationMatchedUnit(char punctuation) implements MatchedUnit {
+        @Override
+        public void rematch(SemanticRegex regex) {
+            regex.matches(punctuation);
+        }
+    }
+
+    record ElementMatchedUnit(Object value , GrammarParser.WordType type) implements MatchedUnit {
+        @Override
+        public void rematch(SemanticRegex regex) {
+            regex.matches(value , type);
+        }
+    }
 
     private SemanticRegex() {
     }
 
     SemanticRegex(Compiler compiler) {
         this.compiler = compiler;
+        root = new SemanticUnit() {
+            {
+                children = new List<SemanticUnit>() {
+                    @Override
+                    public int size() {
+                        return 0;
+                    }
+
+                    @Override
+                    public boolean isEmpty() {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean contains(Object o) {
+                        return false;
+                    }
+
+                    @Override
+                    public Iterator<SemanticUnit> iterator() {
+                        return null;
+                    }
+
+                    @Override
+                    public Object[] toArray() {
+                        return new Object[0];
+                    }
+
+                    @Override
+                    public <T> T[] toArray(T[] a) {
+                        return null;
+                    }
+
+                    @Override
+                    public boolean add(SemanticUnit semanticUnit) {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean remove(Object o) {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean containsAll(Collection<?> c) {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean addAll(Collection<? extends SemanticUnit> c) {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean addAll(int index, Collection<? extends SemanticUnit> c) {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean removeAll(Collection<?> c) {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean retainAll(Collection<?> c) {
+                        return false;
+                    }
+
+                    @Override
+                    public void clear() {
+
+                    }
+
+                    @Override
+                    public SemanticUnit get(int index) {
+                        return null;
+                    }
+
+                    @Override
+                    public SemanticUnit set(int index, SemanticUnit element) {
+                        return null;
+                    }
+
+                    @Override
+                    public void add(int index, SemanticUnit element) {
+
+                    }
+
+                    @Override
+                    public SemanticUnit remove(int index) {
+                        return null;
+                    }
+
+                    @Override
+                    public int indexOf(Object o) {
+                        return 0;
+                    }
+
+                    @Override
+                    public int lastIndexOf(Object o) {
+                        return 0;
+                    }
+
+                    @Override
+                    public ListIterator<SemanticUnit> listIterator() {
+                        return new ListIterator<SemanticUnit>() {
+                            int index = 0;
+
+                            @Override
+                            public boolean hasNext() {
+                                return index < roots.length;
+                            }
+
+                            @Override
+                            public SemanticUnit next() {
+                                return roots[index++];
+                            }
+
+                            @Override
+                            public boolean hasPrevious() {
+                                return false;
+                            }
+
+                            @Override
+                            public SemanticUnit previous() {
+                                return null;
+                            }
+
+                            @Override
+                            public int nextIndex() {
+                                return 0;
+                            }
+
+                            @Override
+                            public int previousIndex() {
+                                return 0;
+                            }
+
+                            @Override
+                            public void remove() {
+
+                            }
+
+                            @Override
+                            public void set(SemanticUnit semanticUnit) {
+
+                            }
+
+                            @Override
+                            public void add(SemanticUnit semanticUnit) {
+
+                            }
+                        };
+                    }
+
+                    @Override
+                    public ListIterator<SemanticUnit> listIterator(int index) {
+                        return null;
+                    }
+
+                    @Override
+                    public List<SemanticUnit> subList(int fromIndex, int toIndex) {
+                        return List.of();
+                    }
+                };
+            }
+
+            @Override
+            SemanticMatch.MatchState matches(SemanticMatch match, char punctuation) {
+                return null;
+            }
+
+            @Override
+            SemanticMatch.MatchState matches(SemanticMatch match, Object object, GrammarParser.WordType type) {
+                return null;
+            }
+        };
     }
 
     @Unfinished
@@ -113,51 +310,86 @@ public class SemanticRegex {
     }
 
     void reset() {
-        unitNow = null;
+        unitNow = root;
         match = new SemanticMatch();
         match.state = SemanticMatch.MatchState.COMPLETE;
     }
 
+    void mismatchMakeup() {
+
+    }
+
     @Unfinished
     final boolean checkMatch() {
+        switch (match.state) {
+            case COMPLETE -> {
+                if (unitNow.regexIndex != -1) {
+                    match.uncertainUnitCount++;
+                    matchedUnitQueue.clean();
+                    match.regexIndex = unitNow.regexIndex;
+                    if (unitNow.children.isEmpty()) {
+                        return true;
+                    }
+                }
+            }
+            case POTENTIAL_MISMATCH -> {
+                match.state = SemanticMatch.MatchState.COMPLETE;
+                matchedUnitQueue.pop().rematch(this);
+            }
+            case MISMATCH -> {
+                mismatchMakeup();
+            }
+        }
         return false;
     }
 
-    final BiConsumer<SemanticUnit , Character> PUNCTUATION_MATCHER = (unit , punctuation) -> {
-        unit.matches(match , punctuation);
-        if (match.state != SemanticMatch.MatchState.MISMATCH && match.state != SemanticMatch.MatchState.POTENTIAL_MISMATCH) {
-            if (checkMatch()) {
-                compiler.structureLayer.parseSemantics(match);
-                return;
-            }
-            else {
-                compiler.statement = unitNow.toString() + " needed";
-                SemanticMismatchException.notCorrespond(compiler);
-            }
-        }
-    };
-
-    interface TriConsumer<A , B , C> {
-        void accept(A a, B b, C c);
-    }
-
-    final TriConsumer<SemanticUnit , Object , GrammarParser.WordType> ELEMENT_MATCHER = (unit , value , type) -> {
-        unit.matches(match , value , type);
-        if (match.state != SemanticMatch.MatchState.MISMATCH && match.state != SemanticMatch.MatchState.POTENTIAL_MISMATCH) {
-            if (checkMatch()) {
-                compiler.structureLayer.parseSemantics(match);
-                return;
-            }
-            else {
-                compiler.statement = unitNow.toString() + " needed";
-                SemanticMismatchException.notCorrespond(compiler);
-            }
-        }
-    };
-
     void matches(char punctuation) {
+        if (match.regexIndex != -1) {
+            matchedUnitQueue.add(new PunctuationMatchedUnit(punctuation));
+        }
+        SemanticMatch.MatchState state;
+        if (match.state == SemanticMatch.MatchState.COMPLETE) {
+            for (SemanticUnit unit : unitNow.children) {
+                if ((state = unit.matches(match , punctuation)) != SemanticMatch.MatchState.MISMATCH && state != SemanticMatch.MatchState.POTENTIAL_MISMATCH) {
+                    match.state = state;
+                    if (checkMatch()) {
+                        compiler.structureLayer.parseSemantics(match);
+                    }
+                    return;
+                }
+            }
+            SemanticMismatchException.mismatch(compiler , "No available regex found for the content.");
+        }
+        else {
+            match.state = unitNow.matches(match , punctuation);
+            if (checkMatch()) {
+                compiler.structureLayer.parseSemantics(match);
+            }
+        }
     }
 
     void matches(Object object , GrammarParser.WordType type) {
+        if (match.regexIndex != -1) {
+            matchedUnitQueue.add(new ElementMatchedUnit(object, type));
+        }
+        SemanticMatch.MatchState state;
+        if (match.state == SemanticMatch.MatchState.COMPLETE) {
+            for (SemanticUnit unit : unitNow.children) {
+                if ((state = unit.matches(match , object , type)) != SemanticMatch.MatchState.MISMATCH && state != SemanticMatch.MatchState.POTENTIAL_MISMATCH) {
+                    match.state = state;
+                    if (checkMatch()) {
+                        compiler.structureLayer.parseSemantics(match);
+                    }
+                    return;
+                }
+            }
+            SemanticMismatchException.mismatch(compiler , "No available regex found for the content.");
+        }
+        else {
+            match.state = unitNow.matches(match , object , type);
+            if (checkMatch()) {
+                compiler.structureLayer.parseSemantics(match);
+            }
+        }
     }
 }

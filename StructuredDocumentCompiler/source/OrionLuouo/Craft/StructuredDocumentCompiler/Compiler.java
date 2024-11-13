@@ -10,13 +10,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
-public class Compiler {
+public class Compiler implements Statement {
     Map<String , SemanticRegex> regexMap;
     WordParser wordParser;
     GrammarParser grammarParser;
     SemanticRegex semanticRegex;
     StructureLayer structureLayer;
     Stack<StructureLayer> layerStack;
+    int characterCount , lineCount , lineCharacterCount;
+    Object wordNow;
 
     public Compiler() {
         regexMap = new HashMap<>();
@@ -34,6 +36,8 @@ public class Compiler {
     public void input(String text) throws SDCException {
         for (char character : text.toCharArray()) {
             wordParser.input(character);
+            characterCount++;
+            lineCharacterCount++;
         }
     }
 
@@ -44,7 +48,11 @@ public class Compiler {
      *                      and the invoker should catch and handle them properly.
      */
     public void input(Stream<Character> stream) throws SDCException {
-        stream.forEach(character -> wordParser.input(character));
+        stream.forEach(character -> {
+            wordParser.input(character);
+            characterCount++;
+            lineCharacterCount++;
+        });
     }
 
     /**
@@ -59,6 +67,8 @@ public class Compiler {
         while ((count = reader.read(buffer)) != -1) {
             for (int i = 0; i < count; ) {
                 wordParser.input(buffer[i++]);
+                characterCount++;
+                lineCharacterCount++;
             }
         }
     }
@@ -129,12 +139,47 @@ public class Compiler {
         return grammarParser;
     }
 
+    /**
+     * To load a registered regex as the semantic compiler.
+     * Attention,
+     * when a sentence is compiled finished,
+     * a regex must be loaded,
+     * whether it is the original regex being reloaded or a new one.
+     *
+     * @param name The key used when registering.
+     */
     public void loadRegex(String name) {
         semanticRegex = regexMap.get(name);
         semanticRegex.reset();
     }
 
+    /**
+     * To add the regex to the pool.
+     * You can later set them as the using regex while compiling.
+     *
+     * @param name The key for searching.
+     */
     public void registerRegex(SemanticRegex regex , String name) {
         regexMap.put(name, regex);
+    }
+
+    @Override
+    public int getCharacterCount() {
+        return characterCount;
+    }
+
+    @Override
+    public int getLineCharacterCount() {
+        return lineCharacterCount;
+    }
+
+    @Override
+    public int getLineCount() {
+        return lineCount;
+    }
+
+    @Override
+    public String getWord() {
+        return wordNow.toString();
     }
 }

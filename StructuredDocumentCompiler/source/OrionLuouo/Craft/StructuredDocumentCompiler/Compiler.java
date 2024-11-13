@@ -10,13 +10,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
-public class Compiler {
+public class Compiler implements Statement {
     Map<String , SemanticRegex> regexMap;
     WordParser wordParser;
     GrammarParser grammarParser;
     SemanticRegex semanticRegex;
     StructureLayer structureLayer;
     Stack<StructureLayer> layerStack;
+    String statement;
+    int lineCount , characterCount , lineCharacterCount;
+    Object wordNow;
 
     public Compiler() {
         regexMap = new HashMap<>();
@@ -34,6 +37,8 @@ public class Compiler {
     public void input(String text) throws SDCException {
         for (char character : text.toCharArray()) {
             wordParser.input(character);
+            characterCount++;
+            lineCharacterCount++;
         }
     }
 
@@ -44,7 +49,11 @@ public class Compiler {
      *                      and the invoker should catch and handle them properly.
      */
     public void input(Stream<Character> stream) throws SDCException {
-        stream.forEach(character -> wordParser.input(character));
+        stream.forEach(character -> {
+            wordParser.input(character);
+            characterCount++;
+            lineCharacterCount++;
+        });
     }
 
     /**
@@ -59,6 +68,8 @@ public class Compiler {
         while ((count = reader.read(buffer)) != -1) {
             for (int i = 0; i < count; ) {
                 wordParser.input(buffer[i++]);
+                characterCount++;
+                lineCharacterCount++;
             }
         }
     }
@@ -136,5 +147,30 @@ public class Compiler {
 
     public void registerRegex(SemanticRegex regex , String name) {
         regexMap.put(name, regex);
+    }
+
+    @Override
+    public String getStatement() {
+        return statement;
+    }
+
+    @Override
+    public int getCharacterCount() {
+        return characterCount;
+    }
+
+    @Override
+    public int getLineCount() {
+        return lineCount;
+    }
+
+    @Override
+    public int getLineCharacterCount() {
+        return lineCharacterCount;
+    }
+
+    @Override
+    public String getWord() {
+        return wordNow.toString();
     }
 }

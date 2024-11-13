@@ -25,6 +25,7 @@ public class SemanticRegex {
 
     @Unfinished
     public static SemanticRegex compile(Compiler compiler , String regex) throws SDCException {
+        /*
         Compiler simpleCompiler = compiler;
         SemanticUnit superRoot = new PunctuationSemanticUnit((char) 0);
         final SemanticUnit[][] units = {new SemanticUnit[]{superRoot}};
@@ -76,6 +77,7 @@ public class SemanticRegex {
         semanticRegex.leaves = units[0];
         semanticRegex.compiler = compiler;
         return semanticRegex;
+         */
     }
 
     @Unfinished
@@ -115,7 +117,7 @@ public class SemanticRegex {
     void reset() {
         unitNow = null;
         match = new SemanticMatch();
-        match.state = SemanticMatch.MatchState.STATE_COMPLETE;
+        match.state = SemanticMatch.MatchState.COMPLETE;
     }
 
     final boolean checkMatch() {
@@ -123,6 +125,31 @@ public class SemanticRegex {
     }
 
     void matches(char punctuation) {
+        if (match.state == SemanticMatch.MatchState.COMPLETE) {
+            if (unitNow == null) {
+                for (SemanticUnit unit : roots) {
+                    unit.matches(match , punctuation);
+                    if (match.state != SemanticMatch.MatchState.MISMATCH) {
+                        if (checkMatch()) {
+                            compiler.structureLayer.parseSemantics(match);
+                            return;
+                        }
+                        else {
+                            compiler.statement = unitNow.toString() + " needed";
+                            SemanticMismatchException.notCorrespond(compiler);
+                        }
+                    }
+                }
+                compiler.statement = "No available regex found for the content.";
+                SemanticMismatchException.notCorrespond(compiler);
+            }
+            else {
+
+            }
+        }
+        else {
+
+        }
     }
 
     void matches(Object object , GrammarParser.WordType type) {

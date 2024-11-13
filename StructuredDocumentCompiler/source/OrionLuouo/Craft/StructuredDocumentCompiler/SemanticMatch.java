@@ -8,6 +8,7 @@ import java.util.LinkedList;
 
 public class SemanticMatch extends SemanticMatchUnit {
     enum MatchState {
+        COMPLETE , INCOMPLETE , MISMATCH , POTENTIAL , POTENTIAL_MISMATCH;
     }
 
     List<SemanticMatchUnit> matchUnits;
@@ -21,5 +22,9 @@ public class SemanticMatch extends SemanticMatchUnit {
 
     public Iterator<SemanticMatchUnit> iterator() {
         return matchUnits.iterator();
+    }
+
+    public int getRegexIndex() {
+        return regexIndex;
     }
 }

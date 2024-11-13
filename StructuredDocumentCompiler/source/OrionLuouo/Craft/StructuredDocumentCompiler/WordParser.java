@@ -46,6 +46,10 @@ class BlankWordParser implements WordParser {
                     compiler.grammarParser.word(builder.toString());
                     builder.setLength(0);
                 }
+                if (character == '\r' || character == '\n') {
+                    compiler.lineCharacterCount = 0;
+                    compiler.lineCount = 0;
+                }
                 return;
             }
             if (!builder.isEmpty()) {
@@ -83,6 +87,7 @@ class PreAnnotationWordParser extends BlankWordParser {
         }
         compiler.semanticRegex.matches('/');
         compiler.wordParser = blankWordParser;
+        blankWordParser.input(character);
     }
 }
 
@@ -96,7 +101,8 @@ class LineAnnotationWordParser extends PreAnnotationWordParser {
     public void input(char character) {
         if (character == 'r' || character == 'n') {
             compiler.wordParser = blankWordParser;
-            return;
+            compiler.lineCharacterCount = 0;
+            compiler.lineCount = 0;
         }
     }
 }
@@ -111,7 +117,10 @@ class AreaAnnotationWordParser extends PreAnnotationWordParser {
     public void input(char character) {
         if (character == '*') {
             compiler.wordParser = new PreAreaAnnotationEndWordParser(compiler , this);
-            return;
+        }
+        else if (character == '\r' || character == '\n') {
+            compiler.lineCharacterCount = 0;
+            compiler.lineCount = 0;
         }
     }
 }

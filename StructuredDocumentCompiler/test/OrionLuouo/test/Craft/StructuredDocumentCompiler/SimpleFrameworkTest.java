@@ -21,7 +21,7 @@ public class SimpleFrameworkTest {
             }
 
             @Override
-            public void parseSemantics(SemanticMatch match, int semanticIndex) {
+            public void parseSemantics(SemanticMatch match) {
                 System.out.println("> Regex matched!");
                 compiler.retractLayer();
             }

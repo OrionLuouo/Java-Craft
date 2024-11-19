@@ -1,5 +1,6 @@
 module OrionLuouo.Craft {
     requires java.desktop;
+    requires java.sql;
 
     exports OrionLuouo.Craft.data;
     exports OrionLuouo.Craft.data.container;

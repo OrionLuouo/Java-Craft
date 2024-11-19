@@ -9,6 +9,6 @@ public class SemanticMismatchException extends SDCException {
     }
 
     public static final void mismatch(Statement statement , String message) {
-        throw new SemanticMismatchException("The content not corresponding to the regex. Word: " + statement.getWord() + ", Line: " + statement.getLineCount() + ", At: " + statement.getLineCharacterCount() + ", Characters in Total: " + statement.getCharacterCount() + ".\r\tStatement: " + message);
+        throw new SemanticMismatchException("The content not corresponding to the regex. " + SDCException.state(statement , message));
     }
 }

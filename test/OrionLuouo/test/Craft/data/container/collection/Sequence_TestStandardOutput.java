@@ -1,4 +1,4 @@
-package OrionLuouo.test.Craft.data.container.collection.sequence;
+package OrionLuouo.test.Craft.data.container.collection;
 
 import OrionLuouo.Craft.data.container.collection.sequence.List;
 

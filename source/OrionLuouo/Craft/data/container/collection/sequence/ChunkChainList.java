@@ -637,7 +637,6 @@ public class ChunkChainList<E> implements List<E> {
         int index;
 
         ChunkChainListIterator(int index) {
-            index--;
             chunk = root.next;
             index += headIndex;
             while (index >= chunk.array.length) {

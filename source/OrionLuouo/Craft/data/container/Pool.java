@@ -1,11 +1,12 @@
 package OrionLuouo.Craft.data.container;
 
 import OrionLuouo.Craft.data.CouplePair;
-import OrionLuouo.Craft.data.Iterator;
 import OrionLuouo.Craft.data.container.collection.sequence.ChunkChainList;
 import OrionLuouo.Craft.data.container.collection.sequence.List;
 
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
@@ -141,11 +142,11 @@ public abstract class Pool<T> {
 
     public static final Decider DECIDER_MAXIMUM = (size) -> 0
             , DECIDER_MINIMUM = (size) -> --size
-            , DECIDER_MEDIUM = (size) -> size << 1;
+            , DECIDER_MEDIUM = (size) -> size >> 1;
 
     public static final long TIMEOUT_AGE_DEFAULT = 60_000;
 
-    List<CouplePair<T , Long>> availablePool;
+    LinkedList<CouplePair<T , Long>> availablePool;
     Set<T> occupiedPool;
     long timeoutAge;
     Decider decider;
@@ -154,6 +155,7 @@ public abstract class Pool<T> {
     Lock lock;
     Condition waitingCondition , monitorSleepingCondition;
     Thread timeoutMonitor;
+    int waitingConsumers;
 
     /**
      * To destruct an object.
@@ -166,7 +168,7 @@ public abstract class Pool<T> {
     protected abstract T construct();
 
     protected Pool() {
-        availablePool = new ChunkChainList<>();
+        availablePool = new LinkedList<>();
         occupiedPool = new HashSet<>();
         lock = new ReentrantLock();
         waitingCondition = lock.newCondition();
@@ -175,7 +177,7 @@ public abstract class Pool<T> {
         setDecider(DECIDER_MEDIUM);
         setExpander(new PowerExpander(1.55f));
         setReducer(new RigidReducer(5));
-        (timeoutMonitor = new Thread(() -> {
+        timeoutMonitor = new Thread(() -> {
             lock.lock();
             while (true) {
                 while (availablePool.size() == 0) {
@@ -202,13 +204,13 @@ public abstract class Pool<T> {
                     }
                 } while (availablePool.size() != 0);
             }
-        })).start();
+        });
     }
 
     public void setTimeoutAge(long milliseconds) {
         lock.lock();
         long gap = -this.timeoutAge + milliseconds;
-        List<CouplePair<T , Long>> list = new ChunkChainList<>();
+        LinkedList<CouplePair<T , Long>> list = new LinkedList<>();
         Iterator<CouplePair<T , Long>> iterator = availablePool.iterator();
         while (iterator.hasNext()) {
             var cache = iterator.next();
@@ -233,7 +235,23 @@ public abstract class Pool<T> {
 
     public T get() {
         lock.lock();
-        T cache = availablePool.remove(decider.decide(availablePool.size())).valueA();
+        T cache = null;
+        while (availablePool.size() == 0) {
+            if (expander.expand(waitingConsumers + 1 + occupiedPool.size() , occupiedPool.size())) {
+                cache = construct();
+                occupiedPool.add(cache);
+                lock.unlock();
+                return cache;
+            }
+            else {
+                waitingConsumers++;
+                try {
+                    waitingCondition.await();
+                } catch (InterruptedException _) {
+                }
+            }
+        }
+        cache = availablePool.remove(decider.decide(availablePool.size())).valueA();
         occupiedPool.add(cache);
         lock.unlock();
         return cache;
@@ -252,8 +270,20 @@ public abstract class Pool<T> {
         occupiedPool.remove(object);
         if (availablePool.size() == 0) {
             monitorSleepingCondition.signal();
+            if (waitingConsumers != 0) {
+                waitingConsumers--;
+                waitingCondition.signal();
+            }
         }
         availablePool.add(new CouplePair<>(object, System.currentTimeMillis() + timeoutAge));
         lock.unlock();
+    }
+
+    public int availableObjects() {
+        return availablePool.size();
+    }
+
+    public int fullSize() {
+        return availablePool.size() + occupiedPool.size();
     }
 }

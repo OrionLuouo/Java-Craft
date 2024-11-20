@@ -6,10 +6,14 @@ public class Pool_Test {
     static class Executor extends Thread {
         Runnable task;
         boolean destructed;
+        int index;
+
+        static int counter = 0;
 
         Executor() {
             super();
             start();
+            index = counter++;
         }
 
         public void assign(Runnable task) {
@@ -23,6 +27,10 @@ public class Pool_Test {
         public void run() {
             while (true) {
                 synchronized (this) {
+                    if (task != null) {
+                        task.run();
+                    }
+                    task = null;
                     try {
                         this.wait();
                     } catch (InterruptedException _) {
@@ -49,6 +57,7 @@ public class Pool_Test {
     static class ThreadPool extends Pool<Executor> {
         @Override
         protected void destruct(Executor object) {
+            object.destruct();
         }
 
         @Override
@@ -60,10 +69,17 @@ public class Pool_Test {
     public static void main(String[] args) {
         ThreadPool pool = new ThreadPool();
         for (int index = 0 ; index < 1024 ; index++) {
-            Executor executor = pool.get();
+            System.out.println(pool.availableObjects() + " " + pool.fullSize());
+            final Executor executor = pool.get();
             int finalIndex = index;
             executor.assign(() -> {
-                System.out.println(finalIndex + " qwq!");
+                try {
+                    Thread.sleep((long) (Math.random() * 1000));
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                System.out.println('>' + finalIndex + " qwq!");
+                pool.release(executor);
             });
         }
     }

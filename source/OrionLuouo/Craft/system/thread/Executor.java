@@ -10,6 +10,14 @@ public class Executor extends Thread {
         start();
     }
 
+    /**
+     * The Executor is an asynchronous handler of tasks,
+     * though,
+     * it is single-thread.
+     * If the former task is incomplete yet,
+     * this method will be blocked,
+     * till the task's completion and the Executor being free.
+     */
     public void execute(Runnable task) {
         synchronized (this) {
             this.task = task;

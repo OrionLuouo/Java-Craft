@@ -1,17 +1,19 @@
 package OrionLuouo.Craft.data.container;
 
 import OrionLuouo.Craft.data.CouplePair;
+import OrionLuouo.Craft.data.Iterator;
 import OrionLuouo.Craft.data.container.collection.sequence.ChunkChainList;
 import OrionLuouo.Craft.data.container.collection.sequence.List;
+import OrionLuouo.Craft.gui.component.window.Window;
 
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 
 
 public abstract class Pool<T> {
@@ -146,7 +148,7 @@ public abstract class Pool<T> {
 
     public static final long TIMEOUT_AGE_DEFAULT = 60_000;
 
-    LinkedList<CouplePair<T , Long>> availablePool;
+    List<CouplePair<T , Long>> availablePool;
     Set<T> occupiedPool;
     long timeoutAge;
     Decider decider;
@@ -168,7 +170,7 @@ public abstract class Pool<T> {
     protected abstract T construct();
 
     protected Pool() {
-        availablePool = new LinkedList<>();
+        availablePool = new ChunkChainList<>();
         occupiedPool = new HashSet<>();
         lock = new ReentrantLock();
         waitingCondition = lock.newCondition();
@@ -210,7 +212,7 @@ public abstract class Pool<T> {
     public void setTimeoutAge(long milliseconds) {
         lock.lock();
         long gap = -this.timeoutAge + milliseconds;
-        LinkedList<CouplePair<T , Long>> list = new LinkedList<>();
+        List<CouplePair<T , Long>> list = new ChunkChainList<>();
         Iterator<CouplePair<T , Long>> iterator = availablePool.iterator();
         while (iterator.hasNext()) {
             var cache = iterator.next();
@@ -233,6 +235,16 @@ public abstract class Pool<T> {
         this.decider = decider;
     }
 
+    /**
+     * To get an object from the pool.
+     * If there's no available object,
+     * the pool will try to expand.
+     * When expansion fails,
+     * this method will be blocked,
+     * till anyone releases an object to the pool,
+     * and wakes up this thread.
+     * So any object got from here must be released back.
+     */
     public T get() {
         lock.lock();
         T cache = null;
@@ -250,9 +262,22 @@ public abstract class Pool<T> {
                 } catch (InterruptedException _) {
                 }
             }
+            if (availablePool.size() != 0) {
+                waitingConsumers--;
+                cache = availablePool.remove(decider.decide(availablePool.size())).valueA();
+                occupiedPool.add(cache);
+                if (availablePool.size() != 0 && waitingConsumers != 0) {
+                    waitingCondition.signal();
+                }
+                lock.unlock();
+                return cache;
+            }
         }
         cache = availablePool.remove(decider.decide(availablePool.size())).valueA();
         occupiedPool.add(cache);
+        if (availablePool.size() != 0 && waitingConsumers != 0) {
+            waitingCondition.signal();
+        }
         lock.unlock();
         return cache;
     }
@@ -271,11 +296,97 @@ public abstract class Pool<T> {
         if (availablePool.size() == 0) {
             monitorSleepingCondition.signal();
             if (waitingConsumers != 0) {
-                waitingConsumers--;
                 waitingCondition.signal();
+                System.out.println("signaled");
             }
         }
         availablePool.add(new CouplePair<>(object, System.currentTimeMillis() + timeoutAge));
+        System.out.println("released : " + availablePool.size());
+        lock.unlock();
+    }
+
+    /**
+     * This method will apply multiple subscribes to the pool.
+     * One thing that different from invoke method:get by multiple times is that,
+     * this method can cause expansion on larger scale,
+     * for it put all the subscribes onto the pool at one time.
+     * But if the available objects are still not enough,
+     * it'll fall into waiting status,
+     * too.
+     * Also,
+     * all objects got from here must be released back,
+     *
+     * @param consumer The handler of the objects.
+     * @param count The amount of objects needed.
+     */
+    public void batch(Consumer<T> consumer , int count) {
+        lock.lock();
+        if (availablePool.size() < count) {
+            count -= availablePool.size();
+            availablePool.iterate(element -> {
+                T object = element.valueA();
+                occupiedPool.add(object);
+                consumer.accept(object);
+            });
+            availablePool.clean();
+            int size = occupiedPool.size() + count + waitingConsumers;
+            while (expander.expand(size, occupiedPool.size())) {
+                T object = construct();
+                occupiedPool.add(object);
+                consumer.accept(object);
+                size--;
+                if (--count == 0) {
+                    while (waitingConsumers > 0) {
+                        if (!expander.expand(size, occupiedPool.size())) {
+                            break;
+                        }
+                        object = construct();
+                        availablePool.add(new CouplePair<>(object , System.currentTimeMillis() + timeoutAge));
+                        waitingCondition.signal();
+                    }
+                    lock.unlock();
+                    return;
+                }
+            }
+            waitingConsumers += count;
+            System.out.println("wait : " + waitingConsumers);
+            do {
+                try {
+                    waitingCondition.await();
+                } catch (InterruptedException _) {
+                }
+                System.out.println("waked up : " + availablePool.size());
+                if (availablePool.size() < count) {
+                    count -= availablePool.size();
+                    waitingConsumers -= availablePool.size();
+                    availablePool.iterate(element -> {
+                        T object = element.valueA();
+                        occupiedPool.add(object);
+                        consumer.accept(object);
+                    });
+                    availablePool.clean();
+                }
+                else {
+                    waitingConsumers -= count;
+                    while (count-- > 0) {
+                        T element = availablePool.remove(decider.decide(availablePool.size())).valueA();
+                        occupiedPool.add(element);
+                        consumer.accept(element);
+                    }
+                    if (waitingConsumers != 0 && availablePool.size() != 0) {
+                        waitingCondition.signal();
+                    }
+                }
+                System.out.println("wait loop : count = " + count + ", available ?= " + availablePool.size());
+            } while (count > 0);
+        }
+        else {
+            while (count-- > 0) {
+                T element = availablePool.remove(decider.decide(availablePool.size())).valueA();
+                occupiedPool.add(element);
+                consumer.accept(element);
+            }
+        }
         lock.unlock();
     }
 
@@ -284,6 +395,14 @@ public abstract class Pool<T> {
     }
 
     public int fullSize() {
-        return availablePool.size() + occupiedPool.size();
+        return availablePool.size() + occupiedPool.size() + waitingConsumers;
+    }
+
+    public int waitingConsumers() {
+        return waitingConsumers;
+    }
+
+    public int occupiedObjects() {
+        return occupiedPool.size();
     }
 }

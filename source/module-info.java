@@ -23,6 +23,5 @@ module OrionLuouo.Craft {
     exports OrionLuouo.Craft.system.annotation;
     exports OrionLuouo.Craft.system.reflect;
     exports OrionLuouo.Craft.system.thread;
-    exports OrionLuouo.Craft.system.thread.frameRender;
     exports OrionLuouo.Craft.system.utilities;
 }

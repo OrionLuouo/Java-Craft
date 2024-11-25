@@ -20,7 +20,7 @@ public class ChunkChainList<E> implements List<E> {
     }
 
     Chunk root , tail;
-    int chunkSize , size , headIndex , tailIndex;
+    int chunkSize , size , headIndex , tailIndex /* Points to the first empty space. */;
 
     {
         headIndex = 0;
@@ -37,6 +37,25 @@ public class ChunkChainList<E> implements List<E> {
         tailIndex = 0;
         this.chunkSize = chunkSize < 0 ? DEFAULT_CHUNK_SIZE : chunkSize;
         root.next = tail = new Chunk(chunkSize , root);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder("ChunkChainList<T>:{");
+        iterate(element -> {
+            builder.append(element).append(',');
+        });
+        builder.append("}");
+        return builder.toString();
+    }
+
+    public String toGraphString() {
+        StringBuilder builder = new StringBuilder("ChunkChainList<T>:{\n");
+        iterate(element -> {
+            builder.append(element).append(",\n");
+        });
+        builder.append("}");
+        return builder.toString();
     }
 
     @Override
@@ -129,6 +148,90 @@ public class ChunkChainList<E> implements List<E> {
 
     @Override
     public E remove(int index) {
+        size--;
+        Chunk chunk = root.next;
+        index += headIndex;
+        while (index >= chunk.array.length) {
+            index -= chunk.array.length;
+            chunk = chunk.next;
+        }
+        if (chunk == tail) {
+            if (chunk == root.next) {
+                if (index == headIndex) {
+                    return (E) chunk.array[headIndex++];
+                }
+                E value = (E) chunk.array[index];
+                Object[] array = new Object[chunk.array.length - headIndex - 1];
+                System.arraycopy(chunk.array , headIndex , array , 0 , index - headIndex);
+                int length = chunk.array.length - 1 - index;
+                if (length != 0) {
+                    System.arraycopy(chunk.array, index + 1, array, index - headIndex, length);
+                }
+                return value;
+            }
+            else {
+                if (index == tailIndex - 1) {
+                    if (index == 0) {
+                        chunk = tail = chunk.fore;
+                        tailIndex = chunk.array.length - 1;
+                        return (E) chunk.array[tailIndex];
+                    }
+                    return (E) chunk.array[tailIndex--];
+                }
+                E cache = (E) chunk.array[index];
+                System.arraycopy(chunk.array , index + 1 , chunk.array , index , --tailIndex - index);
+                return cache;
+            }
+        }
+        else if (chunk == root.next) {
+            if (index == headIndex) {
+                if (headIndex == chunk.array.length - 1) {
+                    E cache = (E) chunk.array[headIndex];
+                    root.next = chunk.next;
+                    headIndex = 0;
+                    return cache;
+                }
+                return (E) chunk.array[headIndex++];
+            }
+            E cache = (E) chunk.array[index];
+            while (index > headIndex) {
+                chunk.array[index] = chunk.array[--index];
+            }
+            return cache;
+        }
+        else {
+            if (index == 0) {
+                if (chunk.array.length == 1) {
+                    E value = (E) chunk.array[0];
+                    chunk.fore.next = chunk.next;
+                    return value;
+                }
+                E value = (E) chunk.array[0];
+                Object[] array = new Object[chunk.array.length - 1];
+                System.arraycopy(chunk.array , 1 , array , 0 , array.length);
+                chunk.array = array;
+                return value;
+            }
+            if (index == chunk.array.length - 1) {
+                E value = (E) chunk.array[index];
+                Object[] array = new Object[chunk.array.length - 1];
+                System.arraycopy(chunk.array , 0 , array , 0 , array.length);
+                chunk.array = array;
+                return value;
+            }
+            E value = (E) chunk.array[index];
+            Object[] array = new Object[chunk.array.length - 1];
+            System.arraycopy(chunk.array , 0 , array , 0 , index);
+            System.arraycopy(chunk.array , index + 1 , array , index , array.length - index);
+            chunk.array = array;
+            return value;
+        }
+    }
+
+    /* Abandoned.
+     * Too many bugs :(.
+    @Override
+    public E remove(int index) {
         Chunk chunk = root.next;
         index += headIndex;
         while (index >= chunk.array.length) {
@@ -146,16 +249,22 @@ public class ChunkChainList<E> implements List<E> {
                 chunk.fore.next = chunk.next;
                 chunk.next.fore = chunk.fore;
             }
-            tail = chunk == tail ? chunk.fore : tail;
+            tail = chunk == tail ? chunk == root.next ? chunk : chunk.fore : tail;
             headIndex = chunk == root.next ? 0 : headIndex;
             tailIndex = chunk == tail ? chunk.fore.array.length : tailIndex;
         }
         else if (index == begin) {
-            Object[] array = new Object[end - begin];
-            System.arraycopy(chunk.array , begin + 1 , array , 0 , array.length);
-            chunk.array = array;
             if (chunk == root.next) {
                 headIndex++;
+            }
+            else {
+                Object[] array = new Object[end - 1];
+                try {
+                    System.arraycopy(chunk.array , 1 , array , 0 , array.length);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+                chunk.array = array;
             }
         }
         else if (index == end) {
@@ -177,7 +286,11 @@ public class ChunkChainList<E> implements List<E> {
         size--;
         return value;
     }
+    */
 
+    /*
+     * I think this will not work properly :).
+     */
     @Override
     public void remove(int index, int number) {
         Chunk chunk = root.next;

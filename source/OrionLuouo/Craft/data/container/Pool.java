@@ -1,12 +1,13 @@
 package OrionLuouo.Craft.data.container;
 
 import OrionLuouo.Craft.data.CouplePair;
-import OrionLuouo.Craft.data.Iterator;
 import OrionLuouo.Craft.data.container.collection.sequence.ChunkChainList;
 import OrionLuouo.Craft.data.container.collection.sequence.List;
 import OrionLuouo.Craft.gui.component.window.Window;
 
+import javax.crypto.spec.PSource;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -148,7 +149,8 @@ public abstract class Pool<T> {
 
     public static final long TIMEOUT_AGE_DEFAULT = 60_000;
 
-    List<CouplePair<T , Long>> availablePool;
+    LinkedList<CouplePair<T , Long>> availablePool;
+    //List<CouplePair<T , Long>> availablePool;
     Set<T> occupiedPool;
     long timeoutAge;
     Decider decider;
@@ -170,7 +172,8 @@ public abstract class Pool<T> {
     protected abstract T construct();
 
     protected Pool() {
-        availablePool = new ChunkChainList<>();
+        availablePool = new LinkedList<>();
+        //availablePool = new ChunkChainList<>();
         occupiedPool = new HashSet<>();
         lock = new ReentrantLock();
         waitingCondition = lock.newCondition();
@@ -190,29 +193,38 @@ public abstract class Pool<T> {
                 }
                 do {
                     CouplePair<T, Long> pair = availablePool.getFirst();
+                    //System.out.println(pair);
                     if (pair.valueB() > System.currentTimeMillis()) {
+                        //System.out.println("Monitor awaiting : " + (pair.valueB() - System.currentTimeMillis()));
                         try {
                             monitorSleepingCondition.await(pair.valueB() - System.currentTimeMillis() , TimeUnit.MILLISECONDS);
                         } catch (InterruptedException _) {
                         }
                         break;
                     }
+                    //System.out.println("timeout age : " + pair.valueB() + ", now : " + System.currentTimeMillis());
                     if (reducer.reduce(occupiedPool.size() , availablePool.size())) {
                         availablePool.poll();
                         destruct(pair.valueA());
+                        //System.out.println("Object destructed , timeout : " + (long) (System.currentTimeMillis() - pair.valueB()) + ", remaining : " + availablePool.size());
                     }
                     else {
-                        break;
+                        try {
+                            monitorSleepingCondition.await(timeoutAge , TimeUnit.MILLISECONDS);
+                        } catch (InterruptedException _) {
+                        }
                     }
                 } while (availablePool.size() != 0);
             }
         });
+        timeoutMonitor.setDaemon(true);
+        timeoutMonitor.start();
     }
 
     public void setTimeoutAge(long milliseconds) {
         lock.lock();
         long gap = -this.timeoutAge + milliseconds;
-        List<CouplePair<T , Long>> list = new ChunkChainList<>();
+        LinkedList<CouplePair<T , Long>> list = new LinkedList<>();
         Iterator<CouplePair<T , Long>> iterator = availablePool.iterator();
         while (iterator.hasNext()) {
             var cache = iterator.next();
@@ -220,6 +232,7 @@ public abstract class Pool<T> {
         }
         availablePool = list;
         monitorSleepingCondition.signal();
+        timeoutAge = milliseconds;
         lock.unlock();
     }
 
@@ -297,11 +310,11 @@ public abstract class Pool<T> {
             monitorSleepingCondition.signal();
             if (waitingConsumers != 0) {
                 waitingCondition.signal();
-                System.out.println("signaled");
+                //System.out.println("signaled");
             }
         }
         availablePool.add(new CouplePair<>(object, System.currentTimeMillis() + timeoutAge));
-        System.out.println("released : " + availablePool.size());
+        //System.out.println("released : " + availablePool.size() + " waiting : " + waitingConsumers + " time : " + System.currentTimeMillis() + " timeout age : " + System.currentTimeMillis() + timeoutAge);
         lock.unlock();
     }
 
@@ -323,12 +336,12 @@ public abstract class Pool<T> {
         lock.lock();
         if (availablePool.size() < count) {
             count -= availablePool.size();
-            availablePool.iterate(element -> {
+            availablePool.forEach(element -> {
                 T object = element.valueA();
                 occupiedPool.add(object);
                 consumer.accept(object);
             });
-            availablePool.clean();
+            availablePool.clear();
             int size = occupiedPool.size() + count + waitingConsumers;
             while (expander.expand(size, occupiedPool.size())) {
                 T object = construct();
@@ -349,22 +362,22 @@ public abstract class Pool<T> {
                 }
             }
             waitingConsumers += count;
-            System.out.println("wait : " + waitingConsumers);
+            //System.out.println("wait : " + waitingConsumers);
             do {
                 try {
                     waitingCondition.await();
                 } catch (InterruptedException _) {
                 }
-                System.out.println("waked up : " + availablePool.size());
+                //System.out.println("waked up : " + availablePool.size());
                 if (availablePool.size() < count) {
                     count -= availablePool.size();
                     waitingConsumers -= availablePool.size();
-                    availablePool.iterate(element -> {
+                    availablePool.forEach(element -> {
                         T object = element.valueA();
                         occupiedPool.add(object);
                         consumer.accept(object);
                     });
-                    availablePool.clean();
+                    availablePool.clear();
                 }
                 else {
                     waitingConsumers -= count;
@@ -377,7 +390,7 @@ public abstract class Pool<T> {
                         waitingCondition.signal();
                     }
                 }
-                System.out.println("wait loop : count = " + count + ", available ?= " + availablePool.size());
+                //System.out.println("wait loop : count = " + count + ", available ?= " + availablePool.size());
             } while (count > 0);
         }
         else {

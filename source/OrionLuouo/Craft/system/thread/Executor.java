@@ -7,6 +7,7 @@ public class Executor extends Thread {
 
     Executor() {
         super();
+        setDaemon(true);
         start();
     }
 

@@ -2,34 +2,65 @@ package OrionLuouo.Craft.data.container.collection.sequence;
 
 import OrionLuouo.Craft.data.Iterator;
 
-public class SuperChainList implements List {
+public class SuperChainList<E> implements List<E> {
+    static class Node<E> {
+        Node next;
+        E value;
+    }
+
+    static class GuardNode<E> {
+        GuardNode fore , next;
+        int leapingNodeCount;
+        Node<E> node;
+
+        GuardNode(Node<E> node) {
+            this.node = node;
+        }
+    }
+
+    public static final int LEAP_STEP = 16;
+
+    int leapStep , size;
+    final Node<E> root;
+    final GuardNode<E> guard;
+
+    public SuperChainList() {
+        this(LEAP_STEP);
+    }
+
+    public SuperChainList(int leapStep) {
+        this.leapStep = leapStep;
+        root = new Node<E>();
+        guard = new GuardNode<E>(root);
+    }
+
     @Override
-    public Object getFirst() {
+    public E getFirst() {
         return null;
     }
 
     @Override
-    public Object poll() {
+    public E poll() {
         return null;
     }
 
     @Override
-    public Object getLast() {
+    public E getLast() {
         return null;
     }
 
     @Override
-    public Object pop() {
+    public E pop() {
         return null;
     }
 
     @Override
-    public Object get(int index) {
+    public E get(int index) {
         return null;
     }
 
     @Override
-    public Object remove(int index) {
+    public E remove(int index) {
         return null;
     }
 
@@ -39,12 +70,12 @@ public class SuperChainList implements List {
     }
 
     @Override
-    public void insert(int index, Object element) {
+    public void insert(int index, E element) {
 
     }
 
     @Override
-    public void insert(int index, Object[] array) {
+    public void insert(int index, E[] array) {
 
     }
 
@@ -59,13 +90,13 @@ public class SuperChainList implements List {
     }
 
     @Override
-    public Object[] toArray(int index, int number, Object[] array) {
-        return new Object[0];
+    public E[] toArray(int index, int number, E[] array) {
+        return array;
     }
 
     @Override
-    public Object[] removeAndGet(int index, int number, Object[] array) {
-        return new Object[0];
+    public E[] removeAndGet(int index, int number, E[] array) {
+        return array;
     }
 
     @Override
@@ -79,7 +110,7 @@ public class SuperChainList implements List {
     }
 
     @Override
-    public void add(Object element) {
+    public void add(E element) {
 
     }
 
@@ -99,8 +130,8 @@ public class SuperChainList implements List {
     }
 
     @Override
-    public Object[] toArray(Object[] array) {
-        return new Object[0];
+    public E[] toArray(E[] array) {
+        return array;
     }
 
     @Override

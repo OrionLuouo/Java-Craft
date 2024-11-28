@@ -1,16 +1,17 @@
 package OrionLuouo.Craft.data.container.collection.sequence;
 
 import OrionLuouo.Craft.data.Iterator;
+import OrionLuouo.Craft.system.annotation.Unfinished;
 
 public class SuperChainList<E> implements List<E> {
     static class Node<E> {
-        Node next;
+        Node<E> next;
         E value;
     }
 
     static class GuardNode<E> {
-        GuardNode fore , next;
-        int leapingNodeCount;
+        GuardNode<E> fore , next;
+        int step;
         Node<E> node;
 
         GuardNode(Node<E> node) {
@@ -20,9 +21,12 @@ public class SuperChainList<E> implements List<E> {
 
     public static final int LEAP_STEP = 16;
 
-    int leapStep , size;
+    int leapStep , splitStep , size;
     final Node<E> root;
     final GuardNode<E> guard;
+    Node<E> tail;
+    GuardNode<E> tailGuard;
+
 
     public SuperChainList() {
         this(LEAP_STEP);
@@ -30,37 +34,139 @@ public class SuperChainList<E> implements List<E> {
 
     public SuperChainList(int leapStep) {
         this.leapStep = leapStep;
+        splitStep = leapStep >> 1;
         root = new Node<E>();
         guard = new GuardNode<E>(root);
+        tailGuard = guard;
+    }
+
+    private void checkSurMerge(GuardNode<E> guard) {
+        for (int step = guard.step + guard.next.step ; step > leapStep && step < splitStep && guard.next != null ; step = guard.step + guard.next.step) {
+            guard.step = step;
+            guard.next = guard.next.next;
+            if (guard.next == null) {
+                tailGuard = guard;
+                return;
+            }
+            guard = guard.next;
+        }
+    }
+
+    private void checkForeMerge(GuardNode<E> guard) {
+        for (int step = guard.step + guard.next.step ; step > leapStep && step < splitStep ; step = guard.step + guard.next.step) {
+            guard = guard.fore;
+            guard.step = step;
+            guard.next = guard.next.next;
+        }
+        if (guard.next == null) {
+            tailGuard = guard;
+        }
+    }
+
+    private void checkSplit(GuardNode<E> guard) {
+        while (guard.step > splitStep) {
+            Node<E> next = guard.node;
+            int surStep = guard.step - leapStep , looper = leapStep;
+            while (looper-- > 0) {
+                next = next.next;
+            }
+            GuardNode<E> surGuard = new GuardNode<>(next);
+            surGuard.step = surStep;
+            guard.step = leapStep;
+            surGuard.next = guard.next;
+            guard.next = surGuard;
+            guard = surGuard;
+        }
+        if (guard.next == null) {
+            tailGuard = guard;
+        }
     }
 
     @Override
     public E getFirst() {
-        return null;
+        return root.next.value;
     }
 
     @Override
     public E poll() {
-        return null;
+        Node<E> node = root.next;
+        root.next = node.next;
+        guard.node = node.next;
+        guard.step--;
+        size--;
+        checkSurMerge(guard);
+        if (root.next == null) {
+            tail = null;
+        }
+        return node.value;
     }
 
     @Override
     public E getLast() {
-        return null;
+        return tail.value;
     }
 
     @Override
     public E pop() {
-        return null;
+        if (tailGuard.node == tail) {
+            E value = tail.value;
+            GuardNode<E> foreGuard = tailGuard.fore;
+            Node<E> fore = foreGuard.node;
+            while (fore.next != tail) {
+                fore = fore.next;
+            }
+            tail = fore;
+            tailGuard = foreGuard;
+            foreGuard.next = null;
+            size--;
+            tail.next = null;
+            return value;
+        }
+        else {
+            Node<E> fore = tailGuard.node;
+            while (fore.next != tail) {
+                fore = fore.next;
+            }
+            E value = tail.value;
+            tail = fore;
+            tail.next = null;
+            tailGuard.step--;
+            checkForeMerge(guard);
+            return value;
+        }
     }
 
     @Override
     public E get(int index) {
-        return null;
+        GuardNode<E> guardNode = guard;
+        while (index >= guardNode.step) {
+            index -= guardNode.step;
+            guardNode = guardNode.next;
+        }
+        Node<E> node = guardNode.node;
+        while (index > 0) {
+            node = node.next;
+            index--;
+        }
+        return node.value;
     }
 
+    @Unfinished
     @Override
     public E remove(int index) {
+        if (index == size - 1) {
+            return pop();
+        }
+        GuardNode<E> guardNode = guard;
+        while (index > guardNode.step) {
+            index -= guardNode.step;
+            guardNode = guardNode.next;
+        }
+        Node<E> node = guardNode.node;
+        while (--index > 0) {
+            node = node.next;
+        }
+
         return null;
     }
 

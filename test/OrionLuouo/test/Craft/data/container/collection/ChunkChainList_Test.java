@@ -13,8 +13,8 @@ public class ChunkChainList_Test {
             ,GET_TIME = 1024 * 16
             ,TO_ARRAY_TIME = 16;
     public static void main(String[] args) {
-        //Sequence_TestStandardOutput test = new Sequence_TestStandardOutput(ChunkChainList.class , SIZE , ADD_TIME , REMOVE_TIME , GET_TIME , INSERT_TIME , TO_ARRAY_TIME , new LinkedList<Integer>() , new ChunkChainList<Integer>() , 0);
-        testIteratorAndRemove();
+        Sequence_TestStandardOutput test = new Sequence_TestStandardOutput(ChunkChainList.class , SIZE , ADD_TIME , REMOVE_TIME , GET_TIME , INSERT_TIME , TO_ARRAY_TIME , new LinkedList<Integer>() , new ChunkChainList<Integer>() , 0);
+        //testIteratorAndRemove();
     }
 
     static void testIteratorAndRemove() {

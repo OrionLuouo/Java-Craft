@@ -3,26 +3,24 @@ package OrionLuouo.Craft.data.container;
 import OrionLuouo.Craft.data.Processor;
 import OrionLuouo.Craft.data.Container;
 import OrionLuouo.Craft.data.Iterator;
-import OrionLuouo.Craft.data.Stream;
 
 import java.lang.reflect.Array;
 
-public interface Package<E> extends Container<E> {
+public interface Pack<E> extends Container<E> {
     E get(int index);
     void set(int index , E element);
-    default E[] get(int index , int number , Class<E> type) {
-        return get(index , number , (E[]) Array.newInstance(type , number));
+    default E[] toArray(int index , int number , Class<E> type) {
+        return toArray(index , number , (E[]) Array.newInstance(type , number));
     }
-    E[] get(int index , int number , E[] array);
     E replace(int index , E newElement);
-    default void replace(int index , E[] newElements) {
+    default void set(int index , E[] newElements) {
         int end = index + newElements.length;
         int ei = 0;
         while (index < end) {
             newElements[ei] = replace(index++ , newElements[ei++]);
         }
     }
-    void replace(int index , Iterator<E> iterator);
+    void set(int index , Iterator<E> iterator);
     @Override
     default void iterate(Processor<E> processor) {
         int size = size();
@@ -53,6 +51,20 @@ public interface Package<E> extends Container<E> {
             }
         };
     }
+    Iterator<E> iterator(int index);
+    default void iterate(int index , Processor<E> processor) {
+        Iterator<E> iterator = iterator(index);
+        iterator.iterate(processor);
+    }
     @Override
-    Package<E> copy();
+    Pack<E> copy();
+    default E[] toArray(int index , int number , E[] array) {
+        array = array.length < number ? (E[]) Array.newInstance(array.getClass().getComponentType(), number) : array;
+        Iterator<E> iterator = iterator(index);
+        index = 0;
+        while (number-- > 0) {
+            array[index++] = iterator.next();
+        }
+        return array;
+    }
 }

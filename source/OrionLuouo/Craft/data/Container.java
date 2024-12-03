@@ -1,6 +1,7 @@
 package OrionLuouo.Craft.data;
 
 import java.lang.reflect.Array;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  *
@@ -11,7 +12,15 @@ public interface Container<E> {
     default E[] toArray(Class<E> type) {
         return toArray((E[]) Array.newInstance(type , size()));
     }
-    E[] toArray(E[] array);
+    default E[] toArray(E[] array) {
+        array = array.length < size() ? (E[]) Array.newInstance(array.getClass (), size()) : array;
+        AtomicInteger index = new AtomicInteger();
+        E[] finalArray = array;
+        iterate(element -> {
+            finalArray[index.getAndIncrement()] = element;
+        });
+        return array;
+    }
     Iterator<E> iterator();
     default void iterate(Processor<E> processor) {
         iterator().iterate(processor);

@@ -1,4 +1,4 @@
-module StructuredDocumentCompiler {
+module OrionLuouo.Craft.StructuredDocumentCompiler {
     requires OrionLuouo.Craft;
 
     exports OrionLuouo.Craft.StructuredDocumentCompiler;

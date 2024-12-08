@@ -15,4 +15,5 @@ public interface XMLDocument {
 
     void saveTo(Writer writer);
 
+    XMLLabel getRootLabel();
 }

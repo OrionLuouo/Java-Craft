@@ -31,14 +31,18 @@ public interface XMLParser {
 
     default void input(Reader reader) throws IOException {
         int character;
-        while ((character = reader.read()) != 0) {
-
+        while ((character = reader.read()) != -1) {
+            input((char) character);
         }
     }
 
     default void input(Stream<Character> stream) {
-
+        stream.forEach(this::input);
     }
 
     void input(char character);
+
+    XMLDocument summarize();
+
+    boolean canBeSummarized();
 }

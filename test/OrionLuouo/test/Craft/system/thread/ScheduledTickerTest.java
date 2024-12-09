@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 public class ScheduledTickerTest {
     static Window window = new Window();
     static TextArea display = new TextArea(window.getWidth() - 200);
-    static ScheduledExecutorService service = new ScheduledThreadPoolExecutor(2);
+    static ScheduledExecutorService service = new ScheduledThreadPoolExecutor(1);
     static ScheduledFuture<?> future;
     static Runnable render = new Runnable() {
         Queue<Long> postFrames = new ChunkChainList<>();
@@ -32,6 +32,7 @@ public class ScheduledTickerTest {
                 }
             }
             postFrames.add(timestamp);
+            System.out.println("qwq");
             display.setText(timestamp + " " + postFrames.size() + " fps");
             System.out.println("tick " + count++);
         }

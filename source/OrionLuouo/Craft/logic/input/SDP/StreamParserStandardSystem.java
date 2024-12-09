@@ -1,9 +1,9 @@
 package OrionLuouo.Craft.logic.input.SDP;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import OrionLuouo.Craft.data.container.collection.sequence.ChunkChainList;
+import OrionLuouo.Craft.data.container.collection.sequence.List;
+
+import java.util.*;
 
 /**
  * A standard StreamParser system,
@@ -19,6 +19,59 @@ import java.util.Set;
  * you can extend out a full system from StreamParser.
  */
 public class StreamParserStandardSystem {
+    public interface EscapeParser {
+        void reset();
+
+        /**
+         * To decide whether the character corresponds to the escape string.
+         *
+         * @param character The content after the escape.
+         *
+         * @return If it corresponds,
+         *         return 1,
+         *         or return -1.
+         *         When the escape string ends,
+         *         return 0 to signal.
+         */
+        byte parse(char character);
+
+        /**
+         * @return The string after escaping.
+         */
+        String getText();
+    }
+
+    public static class FixedEscapeParser implements EscapeParser {
+        final String format , meaning;
+        int index;
+
+        public FixedEscapeParser(String format, String meaning) {
+            this.format = format;
+            this.meaning = meaning;
+        }
+
+        @Override
+        public void reset() {
+            index = 0;
+        }
+
+        @Override
+        public byte parse(char character) {
+            if (character == format.charAt(index++)) {
+                if (index == format.length()) {
+                    return 0;
+                }
+                return 1;
+            }
+            return -1;
+        }
+
+        @Override
+        public String getText() {
+            return meaning;
+        }
+    }
+
     BlankStreamParser blankStreamParser;
     PreLineStructureStreamParser preLineAnnotationStreamParser;
     LineStructureStreamParser lineAnnotationStreamParser;
@@ -26,8 +79,9 @@ public class StreamParserStandardSystem {
     AreaAnnotationStreamParser areaAnnotationStreamParser;
     AreaEndStreamParser areaAnnotationEndStreamParser;
     PreAreaStreamParser preEscapedStringStreamParser;
-    AreaEndStreamParser escapedStringEndStreamParser;
+    EscapedStringEndStreamParser escapedStringEndStreamParser;
     EscapedStringStreamParser escapedStringStreamParser;
+    EscapeStreamParser escapeStreamParser;
 
     public StreamParserStandardSystem(StructuredDocumentParser structuredDocumentParser) {
         blankStreamParser = new BlankStreamParser(structuredDocumentParser , this);
@@ -38,10 +92,13 @@ public class StreamParserStandardSystem {
         areaAnnotationStreamParser.areaEndStreamParser = areaAnnotationEndStreamParser = new AreaEndStreamParser(structuredDocumentParser , blankStreamParser , preAreaAnnotationStreamParser.areaStreamParser);
         blankStreamParser.preEscapedStringStreamParser = new PreAreaStreamParser(structuredDocumentParser , blankStreamParser);
         preEscapedStringStreamParser.areaStreamParser = escapedStringStreamParser = new EscapedStringStreamParser(structuredDocumentParser);
-        escapedStringStreamParser.areaEndStreamParser = escapedStringEndStreamParser = new AreaEndStreamParser(structuredDocumentParser , blankStreamParser , escapedStringStreamParser);
+        escapedStringStreamParser.areaEndStreamParser = escapedStringEndStreamParser = new EscapedStringEndStreamParser(structuredDocumentParser , blankStreamParser , escapedStringStreamParser);
+        escapedStringEndStreamParser.escapedStringStreamParser = escapedStringStreamParser;
+        escapeStreamParser = escapedStringStreamParser.escapeStreamParser;
         setLineAnnotationFormat("//");
         setAreaAnnotationFormat("/*" , "*/");
         setStringFormat("\"" , "\"");
+        setEscape('\\');
     }
 
     public StreamParser getStreamParser() {
@@ -75,6 +132,10 @@ public class StreamParserStandardSystem {
         escapedStringEndStreamParser.end = end.toCharArray();
     }
 
+    public void setEscape(char escape) {
+        escapedStringStreamParser.escape = escape;
+    }
+
     public void enableLineAnnotation(boolean enable) {
         blankStreamParser.preLineAnnotationStreamParser = enable ? preLineAnnotationStreamParser : blankStreamParser;
     }
@@ -85,6 +146,21 @@ public class StreamParserStandardSystem {
 
     public void enableEscapedStringStream(boolean enable) {
         blankStreamParser.preEscapedStringStreamParser = enable ? preEscapedStringStreamParser : blankStreamParser;
+    }
+
+    /**
+     * The parsers will be stored in a List,
+     * and tested serially at the beginning of an escape string.
+     * One thing to be noticed is that as long as the format of the escape string is decided,
+     * it is unchangeable,
+     * which means once the parser fails,
+     * the escaping fails.
+     * So if two or more formats share the same head,
+     * their parsing mechanisms should be built in a single complex parser.
+     */
+    public void addEscapeFormat(EscapeParser escapeParser) {
+        escapeParser.reset();
+        escapeStreamParser.escapeParsers.add(escapeParser);
     }
 }
 
@@ -213,8 +289,6 @@ class LineStructureStreamParser extends InnerStreamParser {
 class PreAreaStreamParser extends PreLineStructureStreamParser {
     BlankStreamParser blankStreamParser;
     AreaStreamParser areaStreamParser;
-    int index;
-    char[] head;
 
     protected PreAreaStreamParser(StructuredDocumentParser structuredDocumentParser , BlankStreamParser blankStreamParser) {
         super(structuredDocumentParser , blankStreamParser);
@@ -224,6 +298,7 @@ class PreAreaStreamParser extends PreLineStructureStreamParser {
     @Override
     void input(char character) {
         if (index == head.length) {
+            areaStreamParser.enter();
             setStreamParser(areaStreamParser);
             areaStreamParser.input(character);
             return;
@@ -252,29 +327,38 @@ abstract class AreaStreamParser extends LineStructureStreamParser {
 
     @Override
     abstract void input(char character);
+
+    abstract void enter();
 }
 
 class AreaEndStreamParser extends InnerStreamParser {
     BlankStreamParser blankStreamParser;
-    StreamParser streamParser;
+    AreaStreamParser areaStreamParser;
     int index = 0;
     char[] end;
 
-    protected AreaEndStreamParser(StructuredDocumentParser structuredDocumentParser , BlankStreamParser blankStreamParser , StreamParser streamParser) {
+    protected AreaEndStreamParser(StructuredDocumentParser structuredDocumentParser , BlankStreamParser blankStreamParser , AreaStreamParser streamParser) {
         super(structuredDocumentParser);
         this.blankStreamParser = blankStreamParser;
-        this.streamParser = streamParser;
+        areaStreamParser = streamParser;
     }
 
     @Override
     void input(char character) {
+        if (index == end.length) {
+            setStreamParser(blankStreamParser);
+            blankStreamParser.input(character);
+            return;
+        }
         if (character == end[index++]) {
-            if (index == end.length) {
-                setStreamParser(blankStreamParser);
-            }
         }
         else {
-            setStreamParser(streamParser);
+            areaStreamParser.end = BlankStreamParser.exclude(end);
+            setStreamParser(areaStreamParser);
+            for (int index = 0 ; index < this.index ; ) {
+                blankStreamParser.input(end[index++]);
+            }
+            areaStreamParser.end = end[0];
         }
     }
 }
@@ -291,22 +375,120 @@ class AreaAnnotationStreamParser extends AreaStreamParser {
             setStreamParser(areaEndStreamParser);
         }
     }
+
+    @Override
+    void enter() {
+    }
 }
 
 class EscapedStringStreamParser extends AreaStreamParser {
-    WordParser.WordType wordType;
     StringBuilder stringBuilder;
+    EscapeStreamParser escapeStreamParser;
+    char escape;
 
     EscapedStringStreamParser(StructuredDocumentParser structuredDocumentParser) {
         super(structuredDocumentParser);
-        if ((wordType = structuredDocumentParser.wordParser.getType("String")) == null) {
-            structuredDocumentParser.wordParser.addType("String",  wordType = new WordParser.WordType("String"));
+        builder = new StringBuilder();
+        escapeStreamParser = new EscapeStreamParser(structuredDocumentParser , stringBuilder , this);
+    }
+
+    @Override
+    void input(char character) {
+        if (character == escape) {
+            setStreamParser(escapeStreamParser);
+            return;
         }
+        if (character == end) {
+            areaEndStreamParser.index = 1;
+            setStreamParser(areaEndStreamParser);
+            return;
+        }
+        stringBuilder.append(character);
+    }
+
+    @Override
+    void enter() {
+        stringBuilder.setLength(0);
+    }
+}
+
+class EscapedStringEndStreamParser extends AreaEndStreamParser {
+    EscapedStringStreamParser escapedStringStreamParser;
+
+    protected EscapedStringEndStreamParser(StructuredDocumentParser structuredDocumentParser, BlankStreamParser blankStreamParser, AreaStreamParser streamParser) {
+        super(structuredDocumentParser, blankStreamParser, streamParser);
+    }
+
+    @Override
+    void input(char character) {
+        if (index == end.length) {
+            structuredDocumentParser.grammarParser.input(escapedStringStreamParser.stringBuilder.toString() , structuredDocumentParser.wordParser.getType("String"));
+            setStreamParser(blankStreamParser);
+            blankStreamParser.input(character);
+            return;
+        }
+        if (character == end[index++]) {
+        }
+        else {
+            areaStreamParser.end = BlankStreamParser.exclude(end);
+            setStreamParser(areaStreamParser);
+            for (int index = 0 ; index < this.index ; ) {
+                blankStreamParser.input(end[index++]);
+            }
+            areaStreamParser.end = end[0];
+        }
+    }
+}
+
+class EscapeStreamParser extends InnerStreamParser {
+    EscapedStringStreamParser escapedStringStreamParser;
+    List<StreamParserStandardSystem.EscapeParser> escapeParsers;
+    StreamParserStandardSystem.EscapeParser parser;
+    StringBuilder builder;
+
+    EscapeStreamParser(StructuredDocumentParser structuredDocumentParser , StringBuilder stringBuilder , EscapedStringStreamParser escapeStreamParser) {
+        super(structuredDocumentParser);
+        this.escapedStringStreamParser = escapeStreamParser;
+        escapeParsers = new ChunkChainList<>();
         builder = new StringBuilder();
     }
 
     @Override
     void input(char character) {
-
+        if (parser == null) {
+            builder.setLength(0);
+            escapeParsers.iterateInterruptibly(escapeParser -> {
+                int status;
+                if ((status = escapeParser.parse(character)) > -1) {
+                    if (status == 0) {
+                        escapeParser.reset();
+                        escapedStringStreamParser.stringBuilder.append(escapeParser.getText());
+                        setStreamParser(escapedStringStreamParser);
+                        return false;
+                    }
+                    parser = escapeParser;
+                    return false;
+                }
+                escapeParser.reset();
+                return true;
+            });
+            return;
+        }
+        builder.append(character);
+        int status = parser.parse(character);
+        if (status == 0) {
+            escapedStringStreamParser.stringBuilder.append(parser.getText());
+            parser.reset();
+            parser = null;
+            setStreamParser(escapedStringStreamParser);
+        }
+        else if (status == 1) {
+        }
+        else {
+            parser.reset();
+            parser = null;
+            escapedStringStreamParser.stringBuilder.append(builder);
+            setStreamParser(escapedStringStreamParser);
+        }
     }
 }

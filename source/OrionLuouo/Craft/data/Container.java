@@ -26,4 +26,16 @@ public interface Container<E> {
         iterator().iterate(processor);
     }
     Container<E> copy();
+
+    /**
+     * The interruptible version of method:iterate(Processor<E>).
+     *
+     * @param processor If continues,
+     *                  return true.
+     */
+    default void iterateInterruptibly(Function<Boolean , E> processor) {
+        Iterator<E> iterator = iterator();
+        while (iterator.hasNext() && processor.process(iterator.next())) {
+        }
+    }
 }

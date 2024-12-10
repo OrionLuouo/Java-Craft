@@ -77,4 +77,13 @@ public class StructuredDocumentParser {
     public void endInput() {
         streamParser.endInput();
     }
+
+    public static StructuredDocumentParser constructStandardParser() {
+        StructuredDocumentParser structuredDocumentParser = new StructuredDocumentParser();
+        StreamParserStandardSystem streamParserStandardSystem = new StreamParserStandardSystem(structuredDocumentParser);
+        structuredDocumentParser.initializeStreamParser(streamParserStandardSystem.getStreamParser());
+        structuredDocumentParser.getWordParser().addBasicMarkTypes();
+        streamParserStandardSystem.addBasicEscapeFormat();
+        return structuredDocumentParser;
+    }
 }

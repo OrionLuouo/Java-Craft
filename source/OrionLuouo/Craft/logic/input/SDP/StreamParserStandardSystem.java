@@ -19,7 +19,7 @@ import java.util.*;
  * and have determined that you exactly need to do it from StreamParser level but not GrammarParser level,<p>
  * you can extend out a full system from StreamParser.
  */
-@Warning(state = Warning.State.UNTESTED)
+@Warning(state = Warning.State.UNTESTED , information = "Not fully tested, yet seems to be fine.")
 public class StreamParserStandardSystem {
     public interface EscapeParser {
         void reset();
@@ -34,6 +34,11 @@ public class StreamParserStandardSystem {
          *         or return -1.
          *         When the escape string ends,
          *         return 0 to signal.
+         *         And there's a special situation can be 2:
+         *         if the escape format is dynamic and unpredictable,
+         *         and only when an unrelated character is inputted,
+         *         can the parser determine the escape ends.
+         *
          */
         byte parse(char character);
 
@@ -73,6 +78,50 @@ public class StreamParserStandardSystem {
             return meaning;
         }
     }
+
+    public static final EscapeParser ESCAPE_BACKSLASH = new FixedEscapeParser("\\" , "\\")
+            , ESCAPE_ENTER = new FixedEscapeParser("r" , "\r")
+            , ESCAPE_LINEFEED = new FixedEscapeParser("n" , "\n")
+            , ESCAPE_TABLE = new FixedEscapeParser("t" , "\t")
+            , ESCAPE_QUOTE = new FixedEscapeParser("\"" , "\"")
+            , ESCAPE_UNICODE = new EscapeParser() {
+        StringBuilder builder;
+        boolean ued;
+        char result;
+
+        {
+            builder = new StringBuilder();
+        }
+
+        @Override
+        public void reset() {
+            builder.setLength(0);
+            ued = false;
+        }
+
+        @Override
+        public byte parse(char character) {
+            if (character <= '9' && character >= '0' && builder.length() < 6 && ued) {
+                builder.append(character);
+            }
+            else if (builder.isEmpty() && character == 'u') {
+                ued = true;
+            }
+            else {
+                if (builder.isEmpty()) {
+                    return -1;
+                }
+                result = (char) (Integer.parseInt(builder.toString()));
+                return 2;
+            }
+            return 1;
+        }
+
+        @Override
+        public String getText() {
+            return String.valueOf(result);
+        }
+    };
 
     BlankStreamParser blankStreamParser;
     PreLineStructureStreamParser preLineAnnotationStreamParser;
@@ -163,6 +212,25 @@ public class StreamParserStandardSystem {
     public void addEscapeFormat(EscapeParser escapeParser) {
         escapeParser.reset();
         escapeStreamParser.escapeParsers.add(escapeParser);
+    }
+
+    /**
+     * If normalize the content that looks like an escape,
+     * but mismatched.
+     * Once true and the situation occurs,
+     * the content will be appended to the string.
+     */
+    public void setNormalizeUnknownEscape(boolean normalizeUnknownEscape) {
+        escapeStreamParser.normalizeUnknownEscape = normalizeUnknownEscape;
+    }
+
+    public void addBasicEscapeFormat() {
+        addEscapeFormat(ESCAPE_BACKSLASH);
+        addEscapeFormat(ESCAPE_ENTER);
+        addEscapeFormat(ESCAPE_LINEFEED);
+        addEscapeFormat(ESCAPE_TABLE);
+        addEscapeFormat(ESCAPE_QUOTE);
+        addEscapeFormat(ESCAPE_UNICODE);
     }
 }
 
@@ -309,7 +377,7 @@ class PreLineStructureStreamParser extends InnerStreamParser {
             for (int index = 0 ; index < this.index ; ) {
                 blankStreamParser.input(head[index++]);
             }
-            blankStreamParser.input(character);
+            structuredDocumentParser.streamParser.input(character);
             resumePreParsers();
         }
     }
@@ -386,7 +454,7 @@ class PreAreaStreamParser extends PreLineStructureStreamParser {
         for (int index = 0 ; index < this.index ; ) {
             blankStreamParser.input(head[index++]);
         }
-        blankStreamParser.input(character);
+        structuredDocumentParser.streamParser.input(character);
         resumePreParsers();
     }
 }
@@ -394,6 +462,9 @@ class PreAreaStreamParser extends PreLineStructureStreamParser {
 abstract class AreaStreamParser extends LineStructureStreamParser {
     char end;
     AreaEndStreamParser areaEndStreamParser;
+
+    protected void endArea() {
+    }
 
     @Override
     protected void endInput() {
@@ -418,6 +489,11 @@ class AreaEndStreamParser extends InnerStreamParser {
 
     @Override
     protected void endInput() {
+        if (index == end.length) {
+            setStreamParser(blankStreamParser);
+            areaStreamParser.endArea();
+            return;
+        }
         throw new SDPException("SDPException-IncompleteDocument: Someone has invoked method:endInput() of StructuredDocumentParser, but the document parsing is yet to be complete.");
     }
 
@@ -431,6 +507,7 @@ class AreaEndStreamParser extends InnerStreamParser {
     void input(char character) {
         if (index == end.length) {
             setStreamParser(blankStreamParser);
+            areaStreamParser.endArea();
             blankStreamParser.input(character);
             return;
         }
@@ -439,9 +516,11 @@ class AreaEndStreamParser extends InnerStreamParser {
         else {
             areaStreamParser.end = BlankStreamParser.exclude(end);
             setStreamParser(areaStreamParser);
+            index--;
             for (int index = 0 ; index < this.index ; ) {
-                blankStreamParser.input(end[index++]);
+                areaStreamParser.input(end[index++]);
             }
+            areaStreamParser.input(character);
             areaStreamParser.end = end[0];
         }
     }
@@ -497,6 +576,12 @@ class EscapedStringStreamParser extends AreaStreamParser {
     }
 
     @Override
+    protected void endArea() {
+        grammarParser.input(stringBuilder.toString() , structuredDocumentParser.wordParser.getType("String"));
+        stringBuilder.setLength(0);
+    }
+
+    @Override
     void input(char character) {
         if (character == escape) {
             setStreamParser(escapeStreamParser);
@@ -526,7 +611,7 @@ class EscapedStringEndStreamParser extends AreaEndStreamParser {
     @Override
     void input(char character) {
         if (index == end.length) {
-            structuredDocumentParser.grammarParser.input(escapedStringStreamParser.stringBuilder.toString() , structuredDocumentParser.wordParser.getType("String"));
+            areaStreamParser.endArea();
             setStreamParser(blankStreamParser);
             blankStreamParser.input(character);
             return;
@@ -536,9 +621,11 @@ class EscapedStringEndStreamParser extends AreaEndStreamParser {
         else {
             areaStreamParser.end = BlankStreamParser.exclude(end);
             setStreamParser(areaStreamParser);
+            index--;
             for (int index = 0 ; index < this.index ; ) {
-                blankStreamParser.input(end[index++]);
+                areaStreamParser.input(end[index++]);
             }
+            areaStreamParser.input(character);
             areaStreamParser.end = end[0];
         }
     }
@@ -549,6 +636,8 @@ class EscapeStreamParser extends InnerStreamParser {
     List<StreamParserStandardSystem.EscapeParser> escapeParsers;
     StreamParserStandardSystem.EscapeParser parser;
     StringBuilder builder;
+    boolean normalizeUnknownEscape;
+
     @Override
     protected void endInput() {
         throw new SDPException("SDPException-IncompleteDocument: Someone has invoked method:endInput() of StructuredDocumentParser, but the document parsing is yet to be complete.");
@@ -559,6 +648,7 @@ class EscapeStreamParser extends InnerStreamParser {
         this.escapedStringStreamParser = escapeStreamParser;
         escapeParsers = new ChunkChainList<>();
         builder = new StringBuilder();
+        normalizeUnknownEscape = false;
     }
 
     @Override
@@ -586,17 +676,32 @@ class EscapeStreamParser extends InnerStreamParser {
         int status = parser.parse(character);
         if (status == 0) {
             escapedStringStreamParser.stringBuilder.append(parser.getText());
+            builder.setLength(0);
             parser.reset();
             parser = null;
             setStreamParser(escapedStringStreamParser);
         }
         else if (status == 1) {
         }
+        else if (status == 2) {
+            escapedStringStreamParser.stringBuilder.append(parser.getText());
+            builder.setLength(0);
+            parser.reset();
+            parser = null;
+            setStreamParser(escapedStringStreamParser);
+            escapedStringStreamParser.input(character);
+        }
         else {
             parser.reset();
             parser = null;
-            escapedStringStreamParser.stringBuilder.append(builder);
             setStreamParser(escapedStringStreamParser);
+            builder.setLength(0);
+            if (normalizeUnknownEscape) {
+                escapedStringStreamParser.stringBuilder.append(escapedStringStreamParser.escape);
+                escapedStringStreamParser.stringBuilder.append(builder);
+                throw new SDPException("SDPException-UnknownEscapeFormat: \"" + escapedStringStreamParser.escape + builder.toString() + "\", and is already normalized and appended to the string.");
+            }
+            throw new SDPException("SDPException-UnknownEscapeFormat: \"" + escapedStringStreamParser.escape + builder.toString() + '"');
         }
     }
 }

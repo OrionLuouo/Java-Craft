@@ -1,11 +1,14 @@
 package OrionLuouo.Craft.system.utilities;
 
 public class Version {
-    int[] codes;
-    String speciality;
+    public static final Version CRAFT_VERSION = new Version("1.0.0 Alpha");
+
+    final int[] codes;
+    final String speciality;
 
     public Version(int[] codes) {
         this.codes = codes;
+        speciality = "";
     }
 
     public Version(int[] codes , String speciality) {
@@ -18,6 +21,7 @@ public class Version {
         this.codes = new int[codes.length];
         int length = codes.length - 1;
         int index = 0;
+        String speciality = "";
         for (; index < length ; ) {
             this.codes[index] = Integer.parseInt(codes[index++]);
         }
@@ -37,18 +41,19 @@ public class Version {
             this.codes[index] = Integer.parseInt(builder.toString());
             speciality = codes[index].substring(builder.length());
         }
+        this.speciality = speciality;
     }
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder(codes[0]);
+        StringBuilder builder = new StringBuilder();
+        builder.append(codes[0]);
         int index = 1;
         while (index < codes.length) {
             builder.append('.');
             builder.append(codes[index++]);
         }
         if (speciality != null) {
-            builder.append('-');
             builder.append(speciality);
         }
         return builder.toString();
@@ -84,11 +89,20 @@ public class Version {
         return false;
     }
 
+    public boolean codeEquals(Version version) {
+        for (int index = 0 ; index < codes.length ; ) {
+            if (index == version.codes.length) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public boolean equals(Version version) {
         if (codes.length != version.codes.length) {
             return false;
         }
-        if (speciality != version.speciality || (speciality != null && !speciality.equals(version.speciality))) {
+        if (speciality != null && !speciality.equals(version.speciality)) {
             return false;
         }
         for (int index = 0 ; index < codes.length ; ) {

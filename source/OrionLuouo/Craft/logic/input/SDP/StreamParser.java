@@ -29,6 +29,9 @@ public abstract class StreamParser {
         }
     }
 
+    protected void endInput() {
+    }
+
     protected final void setStreamParser(StreamParser streamParser) {
         structuredDocumentParser.streamParser = streamParser;
     }
@@ -54,8 +57,8 @@ public abstract class StreamParser {
      * and assume that you already know which type the word is of,
      * then send it into the GrammarParser directly.
      */
-    protected final void truncate(WordParser.WordType type) {
-        grammarParser.input(builder.toString() , type);
+    protected final void truncate(WordParser.WordType type , Object element) {
+        grammarParser.input(element , type);
         builder.setLength(0);
     }
 
@@ -86,8 +89,8 @@ public abstract class StreamParser {
      * To truncate the input stream,
      * but you have an alternative of the word now.
      */
-    protected final void truncate(String word , WordParser.WordType type) {
-        grammarParser.input(word, type);
+    protected final void truncate(Object element , WordParser.WordType type) {
+        grammarParser.input(element , type);
         builder.setLength(0);
     }
 

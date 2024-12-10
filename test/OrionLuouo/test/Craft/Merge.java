@@ -8,8 +8,9 @@ public class Merge {
 
     public static void main(String[] args) throws IOException {
         //merge(".out.other.fs3dMerge".replace("." , "\\\\") , ".source.OrionLuouo.Craft.io.documents.fs3d".replace("." , "\\\\"));
-        merge("\\out\\other\\CraftMerge" , "\\source\\OrionLuouo\\Craft");
+        //merge("\\out\\other\\CraftMerge" , "\\source\\OrionLuouo\\Craft");
         //merge(".StructuredDocumentCompiler.out.other.SDCSource".replace("." , "\\\\") , ".StructuredDocumentCompiler.source".replace("." , "\\\\"));
+        //merge("\\out\\other\\SDPMerge" , "\\source\\OrionLuouo\\Craft\\logic\\input\\SDP");
     }
     
     public static void merge(String fileName , String source) throws IOException {
@@ -33,7 +34,7 @@ public class Merge {
         fileCount++;
         Reader reader = new FileReader(source);
         int count;
-        while ((count = reader.read(buffer)) != -1) {
+        while ((count = reader.read(buffer)) > 0) {
             characterCount += count;
             destination.write(buffer , 0, count);
         }

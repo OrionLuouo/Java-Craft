@@ -2,22 +2,24 @@ package OrionLuouo.Craft.logic.input.SDP;
 
 import OrionLuouo.Craft.data.container.collection.sequence.ChunkChainList;
 import OrionLuouo.Craft.data.container.collection.sequence.List;
+import OrionLuouo.Craft.system.annotation.Warning;
 
 import java.util.*;
 
 /**
- * A standard StreamParser system,
- * which is optimized from the inner package.
- * It includes parsing delimiters in the entrance method:input(char),
- * transmitting words directly to the WordParser,
- * and also annotation ignorance.
- * For security reasons these optimization points can't be publicized,
- * and it is not proper to encourage users override the StreamParser too much,
- * so this standard system is normally the best option.
- * But if you want a more customized StreamParser system,
- * and have determined that you exactly need to do it from StreamParser level but not GrammarParser level,
+ * A standard StreamParser system,<p>
+ * which is optimized from the inner package.<p>
+ * It includes parsing delimiters in the entrance method:input(char),<p>
+ * transmitting words directly to the WordParser,<p>
+ * and also annotation ignorance.<p>
+ * For security reasons these optimization points can't be publicized,<p>
+ * and it is not proper to encourage users override the StreamParser too much,<p>
+ * so this standard system is normally the best option.<p>
+ * But if you want a more customized StreamParser system,<p>
+ * and have determined that you exactly need to do it from StreamParser level but not GrammarParser level,<p>
  * you can extend out a full system from StreamParser.
  */
+@Warning(state = Warning.State.UNTESTED)
 public class StreamParserStandardSystem {
     public interface EscapeParser {
         void reset();
@@ -90,7 +92,7 @@ public class StreamParserStandardSystem {
         preLineAnnotationStreamParser.lineAnnotationStreamParser = lineAnnotationStreamParser = new LineStructureStreamParser(structuredDocumentParser , blankStreamParser);
         preAreaAnnotationStreamParser.areaStreamParser = areaAnnotationStreamParser = new AreaAnnotationStreamParser(structuredDocumentParser);
         areaAnnotationStreamParser.areaEndStreamParser = areaAnnotationEndStreamParser = new AreaEndStreamParser(structuredDocumentParser , blankStreamParser , preAreaAnnotationStreamParser.areaStreamParser);
-        blankStreamParser.preEscapedStringStreamParser = new PreAreaStreamParser(structuredDocumentParser , blankStreamParser);
+        preEscapedStringStreamParser = blankStreamParser.preEscapedStringStreamParser = new PreEscapedStringStreamParser(structuredDocumentParser , blankStreamParser);
         preEscapedStringStreamParser.areaStreamParser = escapedStringStreamParser = new EscapedStringStreamParser(structuredDocumentParser);
         escapedStringStreamParser.areaEndStreamParser = escapedStringEndStreamParser = new EscapedStringEndStreamParser(structuredDocumentParser , blankStreamParser , escapedStringStreamParser);
         escapedStringEndStreamParser.escapedStringStreamParser = escapedStringStreamParser;
@@ -172,7 +174,7 @@ class BlankStreamParser extends PreAreaStreamParser {
         delimiters.forEach(delimiter -> {
             max[0] = max[0] > delimiter ? max[0] : delimiter;
         });
-        final boolean[] array = new boolean[max[0]];
+        final boolean[] array = new boolean[max[0] + 1];
         delimiters.forEach(delimiter -> {
             array[delimiter] = true;
         });
@@ -187,6 +189,19 @@ class BlankStreamParser extends PreAreaStreamParser {
     LineStructureStreamParser lineAnnotationStreamParser;
     AreaStreamParser areaAnnotationStreamParser , escapedStringStreamParser;
 
+    @Override
+    void hidePreParsers() {
+        lineAnnotationHead = BlankStreamParser.exclude(preLineAnnotationStreamParser.head);
+        areaAnnotationEnd = BlankStreamParser.exclude(preAreaAnnotationStreamParser.head);
+        stringBound = BlankStreamParser.exclude(preEscapedStringStreamParser.head);
+    }
+
+    @Override
+    void resumePreParsers() {
+        lineAnnotationHead = preLineAnnotationStreamParser.head[0];
+        areaAnnotationEnd = preAreaAnnotationStreamParser.head[0];
+        stringBound = preEscapedStringStreamParser.head[0];
+    }
 
     static char exclude(char[] characters) {
         Set<Character> set = new HashSet<>();
@@ -194,7 +209,7 @@ class BlankStreamParser extends PreAreaStreamParser {
             set.add(character);
         }
         for (char character = 0 ; character < Character.MAX_VALUE ; ) {
-            if (set.contains(character)) {
+            if (!set.contains(character)) {
                 return character;
             }
             character++;
@@ -210,13 +225,21 @@ class BlankStreamParser extends PreAreaStreamParser {
     }
 
     @Override
+    protected void endInput() {
+        if (!builder.isEmpty()) {
+            wordParser.input(builder.toString());
+            builder.setLength(0);
+        }
+    }
+
+    @Override
     void input(char character) {
         if (character == lineAnnotationHead) {
             preLineAnnotationStreamParser.index = 1;
             setStreamParser(preLineAnnotationStreamParser);
             return;
         }
-        if (character == areaAnnotationEnd) {
+       if (character == areaAnnotationEnd) {
             preAreaAnnotationStreamParser.index = 1;
             setStreamParser(preAreaAnnotationStreamParser);
             return;
@@ -226,7 +249,7 @@ class BlankStreamParser extends PreAreaStreamParser {
             setStreamParser(preEscapedStringStreamParser);
             return;
         }
-        if (character > delimiters.length || !delimiters[character]) {
+        if (character >= delimiters.length || !delimiters[character]) {
             builder.append(character);
         }
         else {
@@ -234,8 +257,8 @@ class BlankStreamParser extends PreAreaStreamParser {
                 wordParser.input(builder.toString());
                 builder.setLength(0);
             }
-            if (!blanks[character]) {
-                wordParser.input(String.valueOf(character));
+            if (character >= blanks.length || !blanks[character]) {
+                grammarParser.input(character , wordParser.getType("Punctuation"));
             }
         }
     }
@@ -247,9 +270,28 @@ class PreLineStructureStreamParser extends InnerStreamParser {
     int index;
     char[] head;
 
+    @Override
+    protected void endInput() {
+        setStreamParser(blankStreamParser);
+        blankStreamParser.hidePreParsers();
+        for (int index = 0 ; index < this.index ; ) {
+            blankStreamParser.input(head[index++]);
+        }
+        blankStreamParser.resumePreParsers();
+        blankStreamParser.endInput();
+    }
+
     protected PreLineStructureStreamParser(StructuredDocumentParser structuredDocumentParser , BlankStreamParser blankStreamParser) {
         super(structuredDocumentParser);
         this.blankStreamParser = blankStreamParser;
+    }
+
+    void hidePreParsers() {
+        blankStreamParser.lineAnnotationHead = BlankStreamParser.exclude(head);
+    }
+
+    void resumePreParsers() {
+        blankStreamParser.lineAnnotationHead = head[0];
     }
 
     @Override
@@ -257,21 +299,29 @@ class PreLineStructureStreamParser extends InnerStreamParser {
         if (character == head[index++]) {
             if (index == head.length) {
                 setStreamParser(lineAnnotationStreamParser);
+                blankStreamParser.endInput();
             }
         }
         else {
             setStreamParser(blankStreamParser);
-            blankStreamParser.lineAnnotationHead = BlankStreamParser.exclude(head);
+            hidePreParsers();
+            index--;
             for (int index = 0 ; index < this.index ; ) {
                 blankStreamParser.input(head[index++]);
             }
-            blankStreamParser.lineAnnotationHead = head[0];
+            blankStreamParser.input(character);
+            resumePreParsers();
         }
     }
 }
 
 class LineStructureStreamParser extends InnerStreamParser {
     BlankStreamParser blankStreamParser;
+
+    @Override
+    protected void endInput() {
+        blankStreamParser.endInput();
+    }
 
     protected LineStructureStreamParser(StructuredDocumentParser structuredDocumentParser , BlankStreamParser blankStreamParser) {
         super(structuredDocumentParser);
@@ -290,9 +340,32 @@ class PreAreaStreamParser extends PreLineStructureStreamParser {
     BlankStreamParser blankStreamParser;
     AreaStreamParser areaStreamParser;
 
+    @Override
+    protected void endInput() {
+        setStreamParser(blankStreamParser);
+        blankStreamParser.hidePreParsers();
+        for (int index = 0 ; index < this.index ; ) {
+            blankStreamParser.input(head[index++]);
+        }
+        blankStreamParser.resumePreParsers();
+        blankStreamParser.endInput();
+    }
+
     protected PreAreaStreamParser(StructuredDocumentParser structuredDocumentParser , BlankStreamParser blankStreamParser) {
         super(structuredDocumentParser , blankStreamParser);
         this.blankStreamParser = blankStreamParser;
+    }
+
+    @Override
+    void hidePreParsers() {
+        blankStreamParser.lineAnnotationHead = BlankStreamParser.exclude(blankStreamParser.preLineAnnotationStreamParser.head);
+        blankStreamParser.areaAnnotationEnd = BlankStreamParser.exclude(head);
+    }
+
+    @Override
+    void resumePreParsers() {
+        blankStreamParser.lineAnnotationHead = blankStreamParser.preLineAnnotationStreamParser.head[0];
+        blankStreamParser.areaAnnotationEnd = head[0];
     }
 
     @Override
@@ -300,6 +373,7 @@ class PreAreaStreamParser extends PreLineStructureStreamParser {
         if (index == head.length) {
             areaStreamParser.enter();
             setStreamParser(areaStreamParser);
+            blankStreamParser.endInput();
             areaStreamParser.input(character);
             return;
         }
@@ -307,19 +381,24 @@ class PreAreaStreamParser extends PreLineStructureStreamParser {
             return;
         }
         setStreamParser(blankStreamParser);
-        blankStreamParser.lineAnnotationHead = BlankStreamParser.exclude(blankStreamParser.preLineAnnotationStreamParser.head);
-        blankStreamParser.areaAnnotationEnd = BlankStreamParser.exclude(head);
+        hidePreParsers();
+        index--;
         for (int index = 0 ; index < this.index ; ) {
             blankStreamParser.input(head[index++]);
         }
-        blankStreamParser.lineAnnotationHead = blankStreamParser.preLineAnnotationStreamParser.head[0];
-        blankStreamParser.areaAnnotationEnd = head[0];
+        blankStreamParser.input(character);
+        resumePreParsers();
     }
 }
 
 abstract class AreaStreamParser extends LineStructureStreamParser {
     char end;
     AreaEndStreamParser areaEndStreamParser;
+
+    @Override
+    protected void endInput() {
+        throw new SDPException("SDPException-IncompleteDocument: Someone has invoked method:endInput() of StructuredDocumentParser, but the document parsing is yet to be complete.");
+    }
 
     AreaStreamParser(StructuredDocumentParser structuredDocumentParser) {
         super(structuredDocumentParser , null);
@@ -336,6 +415,11 @@ class AreaEndStreamParser extends InnerStreamParser {
     AreaStreamParser areaStreamParser;
     int index = 0;
     char[] end;
+
+    @Override
+    protected void endInput() {
+        throw new SDPException("SDPException-IncompleteDocument: Someone has invoked method:endInput() of StructuredDocumentParser, but the document parsing is yet to be complete.");
+    }
 
     protected AreaEndStreamParser(StructuredDocumentParser structuredDocumentParser , BlankStreamParser blankStreamParser , AreaStreamParser streamParser) {
         super(structuredDocumentParser);
@@ -381,6 +465,26 @@ class AreaAnnotationStreamParser extends AreaStreamParser {
     }
 }
 
+class PreEscapedStringStreamParser extends PreAreaStreamParser {
+    protected PreEscapedStringStreamParser(StructuredDocumentParser structuredDocumentParser, BlankStreamParser blankStreamParser) {
+        super(structuredDocumentParser, blankStreamParser);
+    }
+
+    @Override
+    void hidePreParsers() {
+        blankStreamParser.lineAnnotationHead = BlankStreamParser.exclude(blankStreamParser.preLineAnnotationStreamParser.head);
+        blankStreamParser.areaAnnotationEnd = BlankStreamParser.exclude(head);
+        blankStreamParser.stringBound = BlankStreamParser.exclude(head);
+    }
+
+    @Override
+    void resumePreParsers() {
+        blankStreamParser.lineAnnotationHead = blankStreamParser.preLineAnnotationStreamParser.head[0];
+        blankStreamParser.areaAnnotationEnd = head[0];
+        blankStreamParser.stringBound = head[0];
+    }
+}
+
 class EscapedStringStreamParser extends AreaStreamParser {
     StringBuilder stringBuilder;
     EscapeStreamParser escapeStreamParser;
@@ -388,7 +492,7 @@ class EscapedStringStreamParser extends AreaStreamParser {
 
     EscapedStringStreamParser(StructuredDocumentParser structuredDocumentParser) {
         super(structuredDocumentParser);
-        builder = new StringBuilder();
+        stringBuilder = new StringBuilder();
         escapeStreamParser = new EscapeStreamParser(structuredDocumentParser , stringBuilder , this);
     }
 
@@ -445,6 +549,10 @@ class EscapeStreamParser extends InnerStreamParser {
     List<StreamParserStandardSystem.EscapeParser> escapeParsers;
     StreamParserStandardSystem.EscapeParser parser;
     StringBuilder builder;
+    @Override
+    protected void endInput() {
+        throw new SDPException("SDPException-IncompleteDocument: Someone has invoked method:endInput() of StructuredDocumentParser, but the document parsing is yet to be complete.");
+    }
 
     EscapeStreamParser(StructuredDocumentParser structuredDocumentParser , StringBuilder stringBuilder , EscapedStringStreamParser escapeStreamParser) {
         super(structuredDocumentParser);

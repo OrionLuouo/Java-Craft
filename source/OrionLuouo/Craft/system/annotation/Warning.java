@@ -11,8 +11,12 @@ import java.lang.reflect.Modifier;
 import java.util.Set;
 
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Unfinished {
-    String state() default "Unfinished";
+public @interface Warning {
+    enum State {
+        UNTESTED , HIDDEN_BUG
+    }
+
+    State state() default State.UNTESTED;
 
     String information() default "";
 
@@ -21,13 +25,13 @@ public @interface Unfinished {
             Set<Class<?>> classes = Classes.getAllClasses(packageName);
             int i = 0;
             for (Class<?> c : classes) {
-                Unfinished Unfinished = c.getAnnotation(Unfinished.class);
-                if (Unfinished == null) {
+                Warning warning = c.getAnnotation(Warning.class);
+                if (warning == null) {
                     continue;
                 }
                 System.out.printf("%d. %s%n", i++, c.getName());
-                System.out.println("\tstate = " + Unfinished.state());
-                System.out.println("\tinformation = \"" + Unfinished.information() + '"');
+                System.out.println("\tstate = " + warning.state());
+                System.out.println("\tinformation = \"" + warning.information() + '"');
             }
         }
 
@@ -38,7 +42,7 @@ public @interface Unfinished {
                 Method[] methods = c.getDeclaredMethods();
                 boolean empty = true;
                 for (Method method : methods) {
-                    if (method.getAnnotation(Unfinished.class) != null) {
+                    if (method.getAnnotation(Warning.class) != null) {
                         empty = false;
                     }
                 }
@@ -48,11 +52,11 @@ public @interface Unfinished {
                 System.out.printf("%d. %s%n", i++, c.getName());
                 for (Method method : methods) {
                     if (!Modifier.isPrivate(method.getModifiers()) || testPrivate) {
-                        Unfinished Unfinished = method.getAnnotation(Unfinished.class);
-                        if (Unfinished == null) {
+                        Warning warning = method.getAnnotation(Warning.class);
+                        if (warning == null) {
                             continue;
                         }
-                        System.out.println("\tMethod: " + method.getName() + ", state = " + Unfinished.state() + ", information = \"" + Unfinished.information() + '"');
+                        System.out.println("\tMethod: " + method.getName() + ", state = " + warning.state() + ", information = \"" + warning.information() + '"');
                         break;
                     }
                 }
@@ -66,7 +70,7 @@ public @interface Unfinished {
                 Field[] fields = c.getDeclaredFields();
                 boolean empty = true;
                 for (Field field : fields) {
-                    if (field.getAnnotation(Unfinished.class) != null) {
+                    if (field.getAnnotation(Warning.class) != null) {
                         empty = false;
                     }
                 }
@@ -76,11 +80,11 @@ public @interface Unfinished {
                 System.out.printf("%d. %s%n", i++, c.getName());
                 for (Field field : fields) {
                     if (!Modifier.isPrivate(field.getModifiers()) || testPrivate) {
-                        Unfinished Unfinished = field.getAnnotation(Unfinished.class);
-                        if (Unfinished == null) {
+                        Warning warning = field.getAnnotation(Warning.class);
+                        if (warning == null) {
                             continue;
                         }
-                        System.out.println("\tField: " + field.getName() + ", state = " + Unfinished.state() + ", information = \"" + Unfinished.information() + '"');
+                        System.out.println("\tField: " + field.getName() + ", state = " + warning.state() + ", information = \"" + warning.information() + '"');
                         break;
                     }
                 }
@@ -94,14 +98,14 @@ public @interface Unfinished {
                 Field[] fields = c.getDeclaredFields();
                 boolean empty = true;
                 for (Field method : fields) {
-                    if (method.getAnnotation(Unfinished.class) != null) {
+                    if (method.getAnnotation(Warning.class) != null) {
                         empty = false;
                     }
                 }
                 if (empty) {
                     Method[] methods = c.getDeclaredMethods();
                     for (Method method : methods) {
-                        if(method.getAnnotation(Unfinished.class) != null) {
+                        if(method.getAnnotation(Warning.class) != null) {
                             empty = false;
                         }
                     }
@@ -112,22 +116,22 @@ public @interface Unfinished {
                 System.out.printf("%d. %s%n", i++, c.getName());
                 for (Field field : fields) {
                     if (!Modifier.isPrivate(field.getModifiers()) || testPrivate) {
-                        Unfinished Unfinished = field.getAnnotation(Unfinished.class);
-                        if (Unfinished == null) {
+                        Warning warning = field.getAnnotation(Warning.class);
+                        if (warning == null) {
                             continue;
                         }
-                        System.out.println("\tField: " + field.getName() + ", state = " + Unfinished.state() + ", information = \"" + Unfinished.information() + '"');
+                        System.out.println("\tField: " + field.getName() + ", state = " + warning.state() + ", information = \"" + warning.information() + '"');
                         break;
                     }
                 }
                 Method[] methods = c.getDeclaredMethods();
                 for (Method method : methods) {
                     if (!Modifier.isPrivate(method.getModifiers()) || testPrivate) {
-                        Unfinished Unfinished = method.getAnnotation(Unfinished.class);
-                        if (Unfinished == null) {
+                        Warning warning = method.getAnnotation(Warning.class);
+                        if (warning == null) {
                             continue;
                         }
-                        System.out.println("\tMethod: " + method.getName() + ", state = " + Unfinished.state() + ", information = \"" + Unfinished.information() + '"');
+                        System.out.println("\tMethod: " + method.getName() + ", state = " + warning.state() + ", information = \"" + warning.information() + '"');
                         break;
                     }
                 }
@@ -139,11 +143,11 @@ public @interface Unfinished {
             Method[] methods = testClass.getDeclaredMethods();
             for (Method method : methods) {
                 if (!Modifier.isPrivate(method.getModifiers()) || testPrivate) {
-                    Unfinished Unfinished = method.getAnnotation(Unfinished.class);
-                    if (Unfinished == null) {
+                    Warning warning = method.getAnnotation(Warning.class);
+                    if (warning == null) {
                         continue;
                     }
-                    System.out.println("\tMethod: " + method.getName() + ", state = " + Unfinished.state() + ", information = \"" + Unfinished.information() + '"');
+                    System.out.println("\tMethod: " + method.getName() + ", state = " + warning.state() + ", information = \"" + warning.information() + '"');
                     break;
                 }
             }
@@ -154,11 +158,11 @@ public @interface Unfinished {
             Field[] fields = testClass.getDeclaredFields();
             for (Field field : fields) {
                 if (!Modifier.isPrivate(field.getModifiers()) || testPrivate) {
-                    Unfinished Unfinished = field.getAnnotation(Unfinished.class);
-                    if (Unfinished == null) {
+                    Warning warning = field.getAnnotation(Warning.class);
+                    if (warning == null) {
                         continue;
                     }
-                    System.out.println("\tField: " + field.getName() + ", state = " + Unfinished.state() + ", information = \"" + Unfinished.information() + '"');
+                    System.out.println("\tField: " + field.getName() + ", state = " + warning.state() + ", information = \"" + warning.information() + '"');
                     break;
                 }
             }
@@ -166,26 +170,26 @@ public @interface Unfinished {
 
         public static void testClass(Class<?> testClass , boolean testPrivate) {
             System.out.println(testClass.getName());
-            Unfinished Unfinished = testClass.getAnnotation(Unfinished.class);
-            if (Unfinished != null) {
-                System.out.println("\tUnfinished: " + Unfinished.state() + ", information = \"" + Unfinished.information() + '"');
+            Warning warning = testClass.getAnnotation(Warning.class);
+            if (warning != null) {
+                System.out.println("\tWarning: " + warning.state() + ", information = \"" + warning.information() + '"');
             }
             Field[] fields = testClass.getDeclaredFields();
             for (Field field : fields) {
                 if (!Modifier.isPrivate(field.getModifiers()) || testPrivate) {
-                    Unfinished = field.getAnnotation(Unfinished.class);
-                    if (Unfinished == null) {
+                    warning = field.getAnnotation(Warning.class);
+                    if (warning == null) {
                         continue;
                     }
-                    System.out.println("\tField: " + field.getName() + ", state = " + Unfinished.state() + ", information = \"" + Unfinished.information() + '"');
+                    System.out.println("\tField: " + field.getName() + ", state = " + warning.state() + ", information = \"" + warning.information() + '"');
                     break;
                 }
             }
             Method[] methods = testClass.getDeclaredMethods();
             for (Method method : methods) {
                 if (!Modifier.isPrivate(method.getModifiers()) || testPrivate) {
-                    Unfinished = method.getAnnotation(Unfinished.class);
-                    System.out.println("\tMethod: " + method.getName() + ", state = " + Unfinished.state() + ", information = \"" + Unfinished.information() + '"');
+                    warning = method.getAnnotation(Warning.class);
+                    System.out.println("\tMethod: " + method.getName() + ", state = " + warning.state() + ", information = \"" + warning.information() + '"');
                     break;
                 }
             }

@@ -12,7 +12,25 @@ public class StructuredDocumentParser {
 
     public StructuredDocumentParser() {
         wordParser = new WordParser();
-        grammarParser = new GrammarParser();
+        wordParser.grammarParser = grammarParser = new GrammarParser();
+    }
+
+    /**
+     * To initialize the StreamParser.<p>
+     * It should only be invoked before functioning.
+     *
+     * @throws SDPException If this method is invoked twice or more,<p>
+     *                      it will throw a SDPException.
+     */
+    public void initializeStreamParser(StreamParser streamParser) throws SDPException {
+        if (this.streamParser != null) {
+            throw new SDPException("SDPException-Initialization: The StreamParser is already set.");
+        }
+        this.streamParser = streamParser;
+    }
+
+    public WordParser getWordParser() {
+        return wordParser;
     }
 
     public void input(CharSequence text) {
@@ -46,5 +64,17 @@ public class StructuredDocumentParser {
                 streamParser.input(buffer[i++]);
             }
         }
+    }
+
+    /**
+     * To signal the end of input.<p>
+     * But this method is not that reliable,<p>
+     * especially when the StreamParser system co-work poorly.<p>
+     * So you can input some nonsense characters that act as the delimiter of elements,<p>
+     * like blanks,<p>
+     * before invoke this method.
+     */
+    public void endInput() {
+        streamParser.endInput();
     }
 }

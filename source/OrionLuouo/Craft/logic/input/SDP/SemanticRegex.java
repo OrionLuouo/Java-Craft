@@ -25,6 +25,7 @@ public class SemanticRegex {
     };
 
     SemanticUnit root , unitNow , matchedUnit;
+    MatchState lastMatchState;
     LeaveSemanticUnit[] leaves;
     List<CouplePair<Object , WordParser.WordType>> inputRecord;
     SemanticMatch match;
@@ -33,19 +34,48 @@ public class SemanticRegex {
         return null;
     }
 
-    void input(Object value , WordParser.WordType type) {
+    void rollback() {
 
-        System.out.println("GrammarParser accepted: <" + value.getClass() + ':' + value + ", " + type.name() + ">");
+    }
+
+    void input(Object value , WordParser.WordType type) {
+        CouplePair<Object , WordParser.WordType> element = new CouplePair<>(value, type);
+        inputRecord.add(element);
+        if (lastMatchState == MatchState.MATCHED) {
+            for (SemanticUnit unit : unitNow.children) {
+                lastMatchState = unit.match(element , match);
+                if (lastMatchState == MatchState.MISMATCHED) {
+                    continue;
+                }
+                unitNow = unit;
+                switch (lastMatchState) {
+                    case COMPLETE -> {
+                        inputRecord.clean();
+                        unit.getStateLayer().sentence(match);
+                    }
+                    case COMPLETE_YET_POTENTIAL -> {
+                        inputRecord.clean();
+                        match.record();
+                        matchedUnit = unit;
+                    }
+                }
+                return;
+            }
+            rollback();
+        }
+        else if (lastMatchState == MatchState.YET_TO_BE_MATCHED) {
+            switch ((lastMatchState = unitNow.match(element , match))) {
+
+            }
+        }
     }
 
     void reset() {
         unitNow = matchedUnit = root;
+        lastMatchState = MatchState.MATCHED;
         match = new SemanticMatch();
         if (inputRecord == null) {
             inputRecord = new CycledArrayList<>(16);
-        }
-        else {
-            inputRecord.clean();
         }
     }
 

@@ -9,11 +9,11 @@ public abstract class SemanticUnit {
         return null;
     }
 
-    abstract MatchState match(CouplePair<Object , WordParser.WordType> element);
+    abstract MatchState match(CouplePair<Object , WordParser.WordType> element , SemanticMatch match);
 }
 
 enum MatchState {
-    COMPLETE , INCOMPLETE , COMPLETE_YET_POTENTIAL , NOT_CORRESPOND
+    MATCHED , YET_TO_BE_MATCHED , MISMATCHED , COMPLETE , COMPLETE_YET_POTENTIAL
 }
 
 abstract class LeaveSemanticUnit extends SemanticUnit {

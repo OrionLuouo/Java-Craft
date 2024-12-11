@@ -35,6 +35,10 @@ public class StructuredDocumentParser {
         regex.reset();
     }
 
+    public SemanticRegex compile(String regex) {
+        return SemanticRegex.compile(regex , this);
+    }
+
     /**
      * To initialize the StreamParser.<p>
      * It should only be invoked before functioning.

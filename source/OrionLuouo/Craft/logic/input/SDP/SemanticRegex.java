@@ -10,10 +10,10 @@ import java.util.ArrayList;
 
 /**
  * The final level of the parsing chain,
- * also the executing level.
- * You can customize the logic structure of the document at your full will.
+ * also the executing level.<p>
+ * You can customize the logic structure of the document at your full will.<p>
  * All the morphemes here are defined as elements (A element is an object determined by the word and its type),
- * and the GrammarParser needs SemanticRegex constructed by dynamic combination of elements as its drive.
+ * and the GrammarParser needs SemanticRegex constructed by dynamic combination of elements as its drive.<p>
  * Also,
  * the WordType will come to use here,
  * as the classification of elements.
@@ -24,17 +24,18 @@ public class SemanticRegex {
         throw new SDPException("SDPException-SemanticMismatch: No available regex to match.");
     };
 
+    StructuredDocumentParser document;
     SemanticUnit root , unitNow , matchedUnit;
     MatchState lastMatchState;
     LeaveSemanticUnit[] leaves;
     List<CouplePair<Object , WordParser.WordType>> inputRecord;
     SemanticMatch match;
 
-    public static SemanticRegex compile(String regex) {
+    public static SemanticRegex compile(String regex , StructuredDocumentParser document) {
         return null;
     }
 
-    void rollback() {
+    void rollback(CouplePair<Object , WordParser.WordType> element) {
 
     }
 
@@ -61,7 +62,7 @@ public class SemanticRegex {
                 }
                 return;
             }
-            rollback();
+            rollback(element);
         }
         else if (lastMatchState == MatchState.YET_TO_BE_MATCHED) {
             switch ((lastMatchState = unitNow.match(element , match))) {

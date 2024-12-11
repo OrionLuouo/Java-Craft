@@ -13,7 +13,7 @@ public abstract class SemanticUnit {
 }
 
 enum MatchState {
-    MATCHED , YET_TO_BE_MATCHED , MISMATCHED , COMPLETE , COMPLETE_YET_POTENTIAL
+    MATCHED , YET_TO_BE_MATCHED , MATCHED_YET_POTENTIAL , MISMATCHED , COMPLETE , COMPLETE_YET_POTENTIAL
 }
 
 abstract class LeaveSemanticUnit extends SemanticUnit {

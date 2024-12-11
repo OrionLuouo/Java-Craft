@@ -4,7 +4,6 @@ import OrionLuouo.Craft.data.CouplePair;
 import OrionLuouo.Craft.data.container.collection.sequence.ChunkChainList;
 import OrionLuouo.Craft.data.container.collection.sequence.List;
 
-import javax.xml.crypto.Data;
 import java.util.*;
 
 public class WordParser {
@@ -80,7 +79,7 @@ public class WordParser {
     Map<String , WordType> types;
     List<CouplePair<WordType , FreeTypeChecker>> freeTypes;
     Map<WordType , Map<String , Object>> wordGroups;
-    GrammarParser grammarParser;
+    SemanticRegex semanticRegex;
 
     WordParser() {
         types = new HashMap<>();
@@ -134,7 +133,7 @@ public class WordParser {
             Map.Entry<WordType, Map<String, Object>> entry = iterator.next();
             Object element = entry.getValue().get(word);
             if (element != null) {
-                grammarParser.input(element , entry.getKey());
+                semanticRegex.input(element , entry.getKey());
                 return;
             }
         }
@@ -143,7 +142,7 @@ public class WordParser {
             CouplePair<WordType , FreeTypeChecker> pair = freeTypeIterator.next();
             Object element = pair.valueB().of(word);
             if (element != null) {
-                grammarParser.input(element , pair.valueA());
+                semanticRegex.input(element , pair.valueA());
                 return;
             }
         }

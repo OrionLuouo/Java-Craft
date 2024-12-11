@@ -21,6 +21,10 @@ import java.util.*;
  */
 @Warning(state = Warning.State.UNTESTED , information = "Not fully tested, yet seems to be fine.")
 public class StreamParserStandardSystem {
+    public enum EscapeParsingState {
+        INCOMPLETE , NOT_CORRESPOND , COMPLETE , OVERFLOWN
+    }
+
     public interface EscapeParser {
         void reset();
 
@@ -30,17 +34,18 @@ public class StreamParserStandardSystem {
          * @param character The content after the escape.
          *
          * @return If it corresponds,
-         *         return 1,
-         *         or return -1.
+         *         yet incomplete,
+         *         return INCOMPLETE,
+         *         or return NOT_CORRESPOND.
          *         When the escape string ends,
-         *         return 0 to signal.
-         *         And there's a special situation can be 2:
+         *         return COMPLETE to signal.
+         *         And there's a special situation can be OVERFLOWN:
          *         if the escape format is dynamic and unpredictable,
          *         and only when an unrelated character is inputted,
          *         can the parser determine the escape ends.
          *
          */
-        byte parse(char character);
+        EscapeParsingState parse(char character);
 
         /**
          * @return The string after escaping.
@@ -63,14 +68,14 @@ public class StreamParserStandardSystem {
         }
 
         @Override
-        public byte parse(char character) {
+        public EscapeParsingState parse(char character) {
             if (character == format.charAt(index++)) {
                 if (index == format.length()) {
-                    return 0;
+                    return EscapeParsingState.COMPLETE;
                 }
-                return 1;
+                return EscapeParsingState.INCOMPLETE;
             }
-            return -1;
+            return EscapeParsingState.NOT_CORRESPOND;
         }
 
         @Override
@@ -100,7 +105,7 @@ public class StreamParserStandardSystem {
         }
 
         @Override
-        public byte parse(char character) {
+        public EscapeParsingState parse(char character) {
             if (character <= '9' && character >= '0' && builder.length() < 6 && ued) {
                 builder.append(character);
             }
@@ -109,12 +114,12 @@ public class StreamParserStandardSystem {
             }
             else {
                 if (builder.isEmpty()) {
-                    return -1;
+                    return EscapeParsingState.NOT_CORRESPOND;
                 }
                 result = (char) (Integer.parseInt(builder.toString()));
-                return 2;
+                return EscapeParsingState.OVERFLOWN;
             }
-            return 1;
+            return EscapeParsingState.INCOMPLETE;
         }
 
         @Override
@@ -326,7 +331,7 @@ class BlankStreamParser extends PreAreaStreamParser {
                 builder.setLength(0);
             }
             if (character >= blanks.length || !blanks[character]) {
-                grammarParser.input(character , wordParser.getType("Punctuation"));
+                semanticRegex.input(character , wordParser.getType("Punctuation"));
             }
         }
     }
@@ -577,7 +582,7 @@ class EscapedStringStreamParser extends AreaStreamParser {
 
     @Override
     protected void endArea() {
-        grammarParser.input(stringBuilder.toString() , structuredDocumentParser.wordParser.getType("String"));
+        semanticRegex.input(stringBuilder.toString() , structuredDocumentParser.wordParser.getType("String"));
         stringBuilder.setLength(0);
     }
 
@@ -656,9 +661,9 @@ class EscapeStreamParser extends InnerStreamParser {
         if (parser == null) {
             builder.setLength(0);
             escapeParsers.iterateInterruptibly(escapeParser -> {
-                int status;
-                if ((status = escapeParser.parse(character)) > -1) {
-                    if (status == 0) {
+                StreamParserStandardSystem.EscapeParsingState status;
+                if ((status = escapeParser.parse(character)) != StreamParserStandardSystem.EscapeParsingState.NOT_CORRESPOND) {
+                    if (status == StreamParserStandardSystem.EscapeParsingState.COMPLETE) {
                         escapeParser.reset();
                         escapedStringStreamParser.stringBuilder.append(escapeParser.getText());
                         setStreamParser(escapedStringStreamParser);
@@ -673,17 +678,17 @@ class EscapeStreamParser extends InnerStreamParser {
             return;
         }
         builder.append(character);
-        int status = parser.parse(character);
-        if (status == 0) {
+        StreamParserStandardSystem.EscapeParsingState status = parser.parse(character);
+        if (status == StreamParserStandardSystem.EscapeParsingState.COMPLETE) {
             escapedStringStreamParser.stringBuilder.append(parser.getText());
             builder.setLength(0);
             parser.reset();
             parser = null;
             setStreamParser(escapedStringStreamParser);
         }
-        else if (status == 1) {
+        else if (status == StreamParserStandardSystem.EscapeParsingState.INCOMPLETE) {
         }
-        else if (status == 2) {
+        else if (status == StreamParserStandardSystem.EscapeParsingState.OVERFLOWN) {
             escapedStringStreamParser.stringBuilder.append(parser.getText());
             builder.setLength(0);
             parser.reset();

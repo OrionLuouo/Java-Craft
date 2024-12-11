@@ -5,14 +5,34 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.stream.Stream;
 
+/**
+ * A parser of structured document with rules customized.<p>
+ * It contains a chain of parsers,
+ * which includes StreamParser, WordParser and SemanticRegex in order.<p>
+ * The input stream will be parsed level by level,
+ * and finally converted into execution of invoking the codes of your StateLayer.<p>
+ * In the process,<p>
+ * StreamParser can be customized,
+ * yet only for efficiently processing some simple grammars.<p>
+ * WordParser is unchangeable,
+ * and stores and manage the elements defined in the documents.<p>
+ * SemanticRegex is used to define the potential structure of any sentence in the document.<p>
+ * They're fully customed and dynamic.<p>
+ * Different regexes are needed in different situations.
+ */
 public class StructuredDocumentParser {
     StreamParser streamParser;
     WordParser wordParser;
-    GrammarParser grammarParser;
+    SemanticRegex semanticRegex;
 
     public StructuredDocumentParser() {
         wordParser = new WordParser();
-        wordParser.grammarParser = grammarParser = new GrammarParser();
+        wordParser.semanticRegex = semanticRegex = new SemanticRegex();
+    }
+
+    public void setSemanticRegex(SemanticRegex regex) {
+        semanticRegex = regex;
+        regex.reset();
     }
 
     /**

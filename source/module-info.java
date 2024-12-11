@@ -3,32 +3,30 @@
  * Author: OrionLuouo<p>
  * Version: 1.0.0 Alpha<p>
  * <p>
- * This is a utility library contains a mess of various classes.<p>
- * <p>
- * Structure: OrionLuouo.Craft {<p>
- *      .data {<p>
+ * This is a utility library contains a mess of various classes.
+ */
+/*
+ * Package Information :<p>
+ *      OrionLuouo.Craft.data {<p>
  *          "Things involved in data,<p>
  *          like data storage, management, transmission...";<p>
  *      }<p>
- *      .gui {<p>
- *      }<p>
- *      .io {<p>
- *      }<p>
- *      .logic {<p>
+ *
+ *      OrionLuouo.Craft.logic {<p>
  *          "To optimize the logic of a Java program that uses Craft library.";<p>
+
  *          .input {<p>
  *              "Classes under this package is mainly used for logically accepting and parsing the input.<p>
  *              They don't affect the logic of programs with the input content,<p>
  *              but you can use them to build complex logic of parsing input more easily,<p>
  *              like construct a system for structured documents' parsing.";<p>
  *          }<p>
+
  *          .control {<p>
  *              "Classes in this package are like a control of television,<p>
  *              it accepts commands inputted from I/O access,<p>
  *              and inject the logic into the program.";<p>
  *          }<p>
- *      }<p>
- *      .system {<p>
  *      }<p>
  * }
  */

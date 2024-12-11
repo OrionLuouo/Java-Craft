@@ -16,7 +16,16 @@ import java.util.ArrayList;
  * and the GrammarParser needs SemanticRegex constructed by dynamic combination of elements as its drive.<p>
  * Also,
  * the WordType will come to use here,
- * as the classification of elements.
+ * as the classification of elements.<p>
+ * The Match process obeys some greedy match rules.<p>
+ * If it has begun matching a repeatable element,
+ * yet failed,
+ * it won't try to truncate the repeated sequence.<p>
+ * But the regex will make record points at where the regex bifurcates and has a StateLayer,
+ * like when an element is potential as a whole.<p>
+ * That is,
+ * whenever the regex fails to match,
+ * it trys to roll back to the last record point.
  */
 @Unfinished
 public class SemanticRegex {
@@ -66,8 +75,16 @@ public class SemanticRegex {
         }
         else if (lastMatchState == MatchState.YET_TO_BE_MATCHED) {
             switch ((lastMatchState = unitNow.match(element , match))) {
+                case MATCHED -> {
 
+                }
+                case COMPLETE -> {
+
+                }
             }
+        }
+        else if (lastMatchState == MatchState.MATCHED_YET_POTENTIAL) {
+
         }
     }
 

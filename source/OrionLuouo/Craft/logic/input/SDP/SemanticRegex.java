@@ -2,6 +2,9 @@ package OrionLuouo.Craft.logic.input.SDP;
 
 import OrionLuouo.Craft.data.Array;
 import OrionLuouo.Craft.data.CouplePair;
+import OrionLuouo.Craft.data.Iterable;
+import OrionLuouo.Craft.data.Iterator;
+import OrionLuouo.Craft.data.container.collection.sequence.ChunkChainList;
 import OrionLuouo.Craft.data.container.collection.sequence.CycledArrayList;
 import OrionLuouo.Craft.data.container.collection.sequence.List;
 import OrionLuouo.Craft.system.annotation.Unfinished;
@@ -33,67 +36,57 @@ public class SemanticRegex {
         throw new SDPException("SDPException-SemanticMismatch: No available regex to match.");
     };
 
-    StructuredDocumentParser document;
-    SemanticUnit root , unitNow , matchedUnit;
+    SemanticUnit root , unitNow;
     MatchState lastMatchState;
     LeaveSemanticUnit[] leaves;
-    List<CouplePair<Object , WordParser.WordType>> inputRecord;
+    List<MatchRecord> inputRecord;
     SemanticMatch match;
 
-    public static SemanticRegex compile(String regex , StructuredDocumentParser document) {
-        return null;
-    }
-
+    @Unfinished
     void rollback(CouplePair<Object , WordParser.WordType> element) {
 
     }
 
+    @Unfinished
     void input(Object value , WordParser.WordType type) {
         CouplePair<Object , WordParser.WordType> element = new CouplePair<>(value, type);
-        inputRecord.add(element);
-        if (lastMatchState == MatchState.MATCHED) {
-            for (SemanticUnit unit : unitNow.children) {
-                lastMatchState = unit.match(element , match);
-                if (lastMatchState == MatchState.MISMATCHED) {
-                    continue;
-                }
-                unitNow = unit;
-                switch (lastMatchState) {
-                    case COMPLETE -> {
-                        inputRecord.clean();
-                        unit.getStateLayer().sentence(match);
+        switch (lastMatchState) {
+            case MATCHED -> {
+                SemanticUnit unit;
+                for (int index = 0 ; index < unitNow.children.length ; ) {
+                    unit = unitNow.children[index++];
+                    MatchState state =
+                    if (state == MatchState.MISMATCHED) {
+                        continue;
                     }
-                    case COMPLETE_YET_POTENTIAL -> {
-                        inputRecord.clean();
-                        match.record();
-                        matchedUnit = unit;
+                    if (index != unitNow.children.length) {
+
+
+
                     }
                 }
-                return;
             }
-            rollback(element);
-        }
-        else if (lastMatchState == MatchState.YET_TO_BE_MATCHED) {
-            switch ((lastMatchState = unitNow.match(element , match))) {
-                case MATCHED -> {
+            case COMPLETE_YET_POTENTIAL -> {
 
-                }
-                case COMPLETE -> {
-
-                }
             }
-        }
-        else if (lastMatchState == MatchState.MATCHED_YET_POTENTIAL) {
+            case YET_TO_BE_MATCHED -> {
 
+            }
+            case MATCHED_YET_POTENTIAL -> {
+
+            }
         }
     }
 
     void reset() {
-        unitNow = matchedUnit = root;
+        unitNow = root;
         lastMatchState = MatchState.MATCHED;
         match = new SemanticMatch();
         if (inputRecord == null) {
             inputRecord = new CycledArrayList<>(16);
+        }
+        else {
+            inputRecord.clean();
         }
     }
 
@@ -115,5 +108,21 @@ public class SemanticRegex {
         for (LeaveSemanticUnit leave : leaves) {
             leave.stateLayer = stateLayer;
         }
+    }
+}
+
+@Unfinished
+class MatchRecord extends ChunkChainList<CouplePair<Object , WordParser.WordType>> {
+    SemanticUnit branchNode;
+    int branchIndex;
+
+    MatchRecord(SemanticUnit branchNode) {
+        super(8);
+        this.branchNode = branchNode;
+    }
+
+    @Override
+    public Iterator<CouplePair<Object, WordParser.WordType>> iterator() {
+        return null;
     }
 }

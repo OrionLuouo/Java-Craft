@@ -1,6 +1,8 @@
 package OrionLuouo.Craft.logic.input.SDP;
 
 
+import OrionLuouo.Craft.system.annotation.Unfinished;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.util.stream.Stream;
@@ -24,10 +26,12 @@ public class StructuredDocumentParser {
     StreamParser streamParser;
     WordParser wordParser;
     SemanticRegex semanticRegex;
+    RegexCompiler regexCompiler;
 
     public StructuredDocumentParser() {
         wordParser = new WordParser();
         wordParser.semanticRegex = semanticRegex = new SemanticRegex();
+        regexCompiler = new RegexCompiler(this);
     }
 
     public void setSemanticRegex(SemanticRegex regex) {
@@ -35,8 +39,26 @@ public class StructuredDocumentParser {
         regex.reset();
     }
 
+    public void setInnerWordType(WordParser.WordType... types) {
+        regexCompiler.setInnerWordType(types);
+    }
+
+    public RegexCompiler regexCompiler() {
+        return new RegexCompiler(regexCompiler);
+    }
+
     public SemanticRegex compile(String regex) {
-        return SemanticRegex.compile(regex , this);
+        return regexCompiler().compile(regex);
+    }
+
+    public SemanticRegex compile(String regex , WordParser.WordType... temporaryInnerWordTypes) {
+        RegexCompiler regexCompiler = new RegexCompiler(this.regexCompiler);
+        regexCompiler.setInnerWordType(temporaryInnerWordTypes);
+        return regexCompiler.compile(regex);
+    }
+
+    public void setNicknameOfWordType(WordParser.WordType type , String nickname) {
+        regexCompiler.setNickNameOfWordType(type, nickname);
     }
 
     /**

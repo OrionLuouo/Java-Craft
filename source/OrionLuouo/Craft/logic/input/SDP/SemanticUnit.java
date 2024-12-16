@@ -1,6 +1,7 @@
 package OrionLuouo.Craft.logic.input.SDP;
 
 import OrionLuouo.Craft.data.CouplePair;
+import OrionLuouo.Craft.data.Iterable;
 
 public abstract class SemanticUnit {
     SemanticUnit[] children;

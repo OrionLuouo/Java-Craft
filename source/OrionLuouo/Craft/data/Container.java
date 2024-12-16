@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @param <E> : Element
  */
-public interface Container<E> {
+public interface Container<E> extends Iterable<E> {
     int size();
     default E[] toArray(Class<E> type) {
         return toArray((E[]) Array.newInstance(type , size()));

@@ -5,23 +5,17 @@ import OrionLuouo.Craft.data.Iterable;
 
 public abstract class SemanticUnit {
     SemanticUnit[] children;
+    StateLayer stateLayer;
 
     StateLayer getStateLayer() {
-        return null;
+        return stateLayer;
     }
 
-    abstract MatchState match(CouplePair<Object , WordParser.WordType> element , SemanticMatch match);
+    abstract MatchState match(CouplePair<Object , WordParser.WordType> element , MatchUnit unit);
+
+    abstract CouplePair<MatchState , MatchUnit> tryMatch(CouplePair<Object , WordParser.WordType> element);
 }
 
 enum MatchState {
     MATCHED , YET_TO_BE_MATCHED , MATCHED_YET_POTENTIAL , MISMATCHED , COMPLETE , COMPLETE_YET_POTENTIAL
-}
-
-abstract class LeaveSemanticUnit extends SemanticUnit {
-    StateLayer stateLayer;
-
-    @Override
-    StateLayer getStateLayer() {
-        return stateLayer;
-    }
 }

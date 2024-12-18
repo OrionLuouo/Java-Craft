@@ -36,14 +36,16 @@ public class SemanticRegex {
         throw new SDPException("SDPException-SemanticMismatch: No available regex to match.");
     };
 
+    StructuredDocumentParser structuredDocumentParser;
     SemanticUnit root , unitNow;
     MatchState lastMatchState;
-    LeaveSemanticUnit[] leaves;
-    List<MatchRecord> inputRecord;
+    SemanticUnit[] leaves;
     SemanticMatch match;
+    MatchUnit matchUnit;
+    MatchRecord record;
 
     @Unfinished
-    void rollback(CouplePair<Object , WordParser.WordType> element) {
+    void rollback() {
 
     }
 
@@ -52,29 +54,58 @@ public class SemanticRegex {
         CouplePair<Object , WordParser.WordType> element = new CouplePair<>(value, type);
         switch (lastMatchState) {
             case MATCHED -> {
-                SemanticUnit unit;
-                for (int index = 0 ; index < unitNow.children.length ; ) {
-                    unit = unitNow.children[index++];
-                    MatchState state =
-                    if (state == MatchState.MISMATCHED) {
-                        continue;
-                    }
-                    if (index != unitNow.children.length) {
-
-
-
-                    }
-                }
+                matchNext(element);
             }
             case COMPLETE_YET_POTENTIAL -> {
-
+                MatchState state = unitNow.match(element , matchUnit);
+                if (state == MatchState.MISMATCHED) {
+                    
+                }
+                else {
+                    lastMatchState = state;
+                }
             }
             case YET_TO_BE_MATCHED -> {
-
+                MatchState state = unitNow.match(element , matchUnit);
+                record.add(element);
+                if (state == MatchState.MISMATCHED) {
+                    rollback();
+                }
+                else {
+                    lastMatchState = state;
+                }
             }
             case MATCHED_YET_POTENTIAL -> {
-
+                matchPotential(element);
             }
+        }
+    }
+
+    private void matchNext(CouplePair<Object , WordParser.WordType> element) {
+        SemanticUnit unit;
+        for (int index = 0 ; index < unitNow.children.length ; ) {
+            unit = unitNow.children[index++];
+            CouplePair<MatchState , MatchUnit> result = unit.tryMatch(element);
+            if (result.valueA() == MatchState.MISMATCHED) {
+                continue;
+            }
+            if (index != unitNow.children.length) {
+                match.record.add(record = new MatchRecord(unitNow , index));
+            }
+            unitNow = unit;
+            match.matchUnits.add(matchUnit = result.valueB());
+            record.add(element);
+        }
+    }
+
+    private void matchPotential(CouplePair<Object , WordParser.WordType> element) {
+        MatchState state = unitNow.match(element , matchUnit);
+        if (state == MatchState.MISMATCHED) {
+            matchNext(element);
+        }
+        else {
+            this.lastMatchState = state;
+            record.add(element);
         }
     }
 
@@ -82,12 +113,7 @@ public class SemanticRegex {
         unitNow = root;
         lastMatchState = MatchState.MATCHED;
         match = new SemanticMatch();
-        if (inputRecord == null) {
-            inputRecord = new CycledArrayList<>(16);
-        }
-        else {
-            inputRecord.clean();
-        }
+        matchUnit = null;
     }
 
     /**
@@ -105,24 +131,8 @@ public class SemanticRegex {
     }
 
     public void setStateLayer(StateLayer stateLayer) {
-        for (LeaveSemanticUnit leave : leaves) {
+        for (SemanticUnit leave : leaves) {
             leave.stateLayer = stateLayer;
         }
-    }
-}
-
-@Unfinished
-class MatchRecord extends ChunkChainList<CouplePair<Object , WordParser.WordType>> {
-    SemanticUnit branchNode;
-    int branchIndex;
-
-    MatchRecord(SemanticUnit branchNode) {
-        super(8);
-        this.branchNode = branchNode;
-    }
-
-    @Override
-    public Iterator<CouplePair<Object, WordParser.WordType>> iterator() {
-        return null;
     }
 }

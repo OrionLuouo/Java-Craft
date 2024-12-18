@@ -2,14 +2,8 @@ package OrionLuouo.Craft.logic.input.SDP;
 
 import OrionLuouo.Craft.data.Array;
 import OrionLuouo.Craft.data.CouplePair;
-import OrionLuouo.Craft.data.Iterable;
-import OrionLuouo.Craft.data.Iterator;
-import OrionLuouo.Craft.data.container.collection.sequence.ChunkChainList;
-import OrionLuouo.Craft.data.container.collection.sequence.CycledArrayList;
 import OrionLuouo.Craft.data.container.collection.sequence.List;
 import OrionLuouo.Craft.system.annotation.Unfinished;
-
-import java.util.ArrayList;
 
 /**
  * The final level of the parsing chain,
@@ -32,81 +26,75 @@ import java.util.ArrayList;
  */
 @Unfinished
 public class SemanticRegex {
-    static final StateLayer ROOT_LAYER = abandoned -> {
-        throw new SDPException("SDPException-SemanticMismatch: No available regex to match.");
-    };
-
     StructuredDocumentParser structuredDocumentParser;
     SemanticUnit root , unitNow;
     MatchState lastMatchState;
     SemanticUnit[] leaves;
     SemanticMatch match;
     MatchUnit matchUnit;
-    MatchRecord record;
 
-    @Unfinished
-    void rollback() {
-
+    private void end() {
+        match.record = null;
+        match.branch.sentence(match);
+        match = null;
     }
 
-    @Unfinished
+    private void rollback() {
+        List<CouplePair<Object , WordParser.WordType>> record = match.record;
+        match.rollback();
+        end();
+        record.iterate(element -> {
+            structuredDocumentParser.semanticRegex.input(element.valueA() , element.valueB());
+        });
+    }
+
     void input(Object value , WordParser.WordType type) {
         CouplePair<Object , WordParser.WordType> element = new CouplePair<>(value, type);
         switch (lastMatchState) {
             case MATCHED -> {
                 matchNext(element);
             }
-            case COMPLETE_YET_POTENTIAL -> {
-                MatchState state = unitNow.match(element , matchUnit);
-                if (state == MatchState.MISMATCHED) {
-                    
-                }
-                else {
-                    lastMatchState = state;
-                }
-            }
-            case YET_TO_BE_MATCHED -> {
-                MatchState state = unitNow.match(element , matchUnit);
-                record.add(element);
-                if (state == MatchState.MISMATCHED) {
-                    rollback();
-                }
-                else {
-                    lastMatchState = state;
-                }
-            }
             case MATCHED_YET_POTENTIAL -> {
                 matchPotential(element);
+            }
+            case YET_TO_BE_MATCHED -> {
+                match.record.add(element);
+                lastMatchState = unitNow.match(element , matchUnit, this);
             }
         }
     }
 
     private void matchNext(CouplePair<Object , WordParser.WordType> element) {
-        SemanticUnit unit;
+        if (unitNow.children == null) {
+            end();
+            structuredDocumentParser.semanticRegex.input(element.valueA() , element.valueB());
+            return;
+        }
+        CouplePair<MatchState , MatchUnit> match;
         for (int index = 0 ; index < unitNow.children.length ; ) {
-            unit = unitNow.children[index++];
-            CouplePair<MatchState , MatchUnit> result = unit.tryMatch(element);
-            if (result.valueA() == MatchState.MISMATCHED) {
+            SemanticUnit unit = unitNow.children[index++];
+            if ((match = unit.tryMatch(element)).valueA() == MatchState.MISMATCHED) {
                 continue;
             }
-            if (index != unitNow.children.length) {
-                match.record.add(record = new MatchRecord(unitNow , index));
+            this.match.matchUnits.add(matchUnit = match.valueB());
+            if (unitNow.stateLayer != null) {
+                this.match.branch = unitNow.stateLayer;
+                this.match.branchCount = 0;
+                this.match.record.clean();
             }
-            unitNow = unit;
-            match.matchUnits.add(matchUnit = result.valueB());
-            record.add(element);
+            this.match.record.add(element);
+            return;
         }
+        rollback();
     }
 
     private void matchPotential(CouplePair<Object , WordParser.WordType> element) {
-        MatchState state = unitNow.match(element , matchUnit);
-        if (state == MatchState.MISMATCHED) {
-            matchNext(element);
+        MatchState state = unitNow.match(element , matchUnit, this);
+        if (state != MatchState.MISMATCHED) {
+            match.record.add(element);
+            return;
         }
-        else {
-            this.lastMatchState = state;
-            record.add(element);
-        }
+        matchNext(element);
     }
 
     void reset() {

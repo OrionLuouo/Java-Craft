@@ -9,25 +9,24 @@ import OrionLuouo.Craft.system.annotation.Unfinished;
 
 import javax.swing.text.Element;
 
-public class SemanticMatch implements Iterable<MatchUnit> {
-    SemanticUnit branchNode;
-    int branchIndex;
+public class SemanticMatch{
+    public static final StateLayer ROOT_STATE_LAYER = abandoned -> {
+        throw new SDPException("SDPException-Mismatched: The regex mismatched the input.");
+    };
+
+    StateLayer branch;
+    int branchCount;
     List<CouplePair<Object , WordParser.WordType>> record;
     List<MatchUnit> matchUnits;
 
-    @Override
-    public Iterator<MatchUnit> iterator() {
-        return matchUnits.iterator();
+    SemanticMatch() {
+        branch = ROOT_STATE_LAYER;
+        record = new ChunkChainList<>();
+        matchUnits = new ChunkChainList<>();
     }
-}
 
-class MatchRecord extends ChunkChainList<CouplePair<Object , WordParser.WordType>> {
-    SemanticUnit branchNode;
-    int branchIndex;
-
-    MatchRecord(SemanticUnit branchNode , int branchIndex) {
-        super(8);
-        this.branchNode = branchNode;
-        this.branchIndex = branchIndex;
+    void rollback() {
+        matchUnits.remove(matchUnits.size() - branchCount , branchCount);
+        branchCount = 0;
     }
 }

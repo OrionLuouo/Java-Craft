@@ -2,8 +2,11 @@ package OrionLuouo.Craft.logic.input.SDP;
 
 import OrionLuouo.Craft.data.Array;
 import OrionLuouo.Craft.data.CouplePair;
+import OrionLuouo.Craft.data.container.collection.sequence.ChunkChainList;
 import OrionLuouo.Craft.data.container.collection.sequence.List;
 import OrionLuouo.Craft.system.annotation.Unfinished;
+
+import java.util.ArrayList;
 
 /**
  * The final level of the parsing chain,
@@ -27,100 +30,51 @@ import OrionLuouo.Craft.system.annotation.Unfinished;
 @Unfinished
 public class SemanticRegex {
     StructuredDocumentParser structuredDocumentParser;
-    SemanticUnit root , unitNow;
-    MatchState lastMatchState;
-    SemanticUnit[] leaves;
-    SemanticMatch match;
-    MatchUnit matchUnit;
-
-    private void end() {
-        match.record = null;
-        match.branch.sentence(match);
-        match = null;
-    }
-
-    private void rollback() {
-        List<CouplePair<Object , WordParser.WordType>> record = match.record;
-        match.rollback();
-        end();
-        record.iterate(element -> {
-            structuredDocumentParser.semanticRegex.input(element.valueA() , element.valueB());
-        });
-    }
+    StateLayer stateLayer;
+    SemanticUnit[] units;
+    /*
+     * Value A is the point that rollback to.
+     * Value B is the destination unit.
+     * If A == -1,
+     * not rollback;
+     * or -2,
+     * this is the new record point;
+     * or -3,
+     * the regex mismatched.
+     */
+    int index;
+    List<CouplePair<Object , WordParser.WordType>> record;
+    List<Integer> recordPoints;
+    Operation[] matchOperations , mismatchOperations;
 
     void input(Object value , WordParser.WordType type) {
         CouplePair<Object , WordParser.WordType> element = new CouplePair<>(value, type);
-        switch (lastMatchState) {
-            case MATCHED -> {
-                matchNext(element);
-            }
-            case MATCHED_YET_POTENTIAL -> {
-                matchPotential(element);
-            }
-            case YET_TO_BE_MATCHED -> {
-                match.record.add(element);
-                lastMatchState = unitNow.match(element , matchUnit, this);
-            }
-        }
-    }
+        boolean matched = units[index].match(element);
+        record.add(element);
+        Operation operation = matched ? matchOperations[index] : mismatchOperations[index];
+        switch (operation.operator()) {
+            case MATCH -> {
 
-    private void matchNext(CouplePair<Object , WordParser.WordType> element) {
-        if (unitNow.children == null) {
-            end();
-            structuredDocumentParser.semanticRegex.input(element.valueA() , element.valueB());
-            return;
-        }
-        CouplePair<MatchState , MatchUnit> match;
-        for (int index = 0 ; index < unitNow.children.length ; ) {
-            SemanticUnit unit = unitNow.children[index++];
-            if ((match = unit.tryMatch(element)).valueA() == MatchState.MISMATCHED) {
-                continue;
             }
-            this.match.matchUnits.add(matchUnit = match.valueB());
-            if (unitNow.stateLayer != null) {
-                this.match.branch = unitNow.stateLayer;
-                this.match.branchCount = 0;
-                this.match.record.clean();
-            }
-            this.match.record.add(element);
-            return;
-        }
-        rollback();
-    }
+            case MISMATCH -> {
 
-    private void matchPotential(CouplePair<Object , WordParser.WordType> element) {
-        MatchState state = unitNow.match(element , matchUnit, this);
-        if (state != MatchState.MISMATCHED) {
-            match.record.add(element);
-            return;
+            }
+            case ROLLBACK -> {
+
+            }
+            case CONTINUE -> {
+                
+            }
         }
-        matchNext(element);
     }
 
     void reset() {
-        unitNow = root;
-        lastMatchState = MatchState.MATCHED;
-        match = new SemanticMatch();
-        matchUnit = null;
-    }
-
-    /**
-     * To connect the branch's root with the leaves of this regex.<p>
-     * For later other operations on the regex,
-     * its leaves would change.<p>
-     * Meaning you can regard SemanticRegex as a reference to the SemanticUnits it manages.
-     */
-    public void bifurcate(SemanticRegex branch) {
-        for (SemanticUnit leave : leaves) {
-            leave.children = leave.children == null ? new SemanticUnit[] {
-                    branch.root
-            } : Array.connect(leave.children , branch.root.children);
-        }
+        index = 0;
+        record = new ChunkChainList<>();
+        recordPoints = new ChunkChainList<>();
     }
 
     public void setStateLayer(StateLayer stateLayer) {
-        for (SemanticUnit leave : leaves) {
-            leave.stateLayer = stateLayer;
-        }
+        this.stateLayer = stateLayer;
     }
 }

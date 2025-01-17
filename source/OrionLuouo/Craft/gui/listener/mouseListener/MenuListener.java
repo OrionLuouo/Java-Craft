@@ -5,13 +5,9 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
-/**
- * 光标移出组件范围时开始计时，
- * 设定时间后光标仍在组件外，则执行方法exit()。
- */
 public class MenuListener extends MouseAdapter {
     int waitTime;
-    boolean mouseIn = true;
+    boolean mouseIn = false;
 
     public MenuListener() {
         waitTime = 250;
@@ -35,6 +31,10 @@ public class MenuListener extends MouseAdapter {
             } catch (InterruptedException ignored) {
             }
         });
+    }
+
+    public boolean isMouseIn() {
+        return mouseIn;
     }
 
     public void exit(MouseEvent e) {

@@ -3,7 +3,7 @@ package OrionLuouo.Craft.logic.input.SDP;
 public abstract class StreamParser {
     StringBuilder builder;
     WordParser wordParser;
-    SemanticRegex semanticRegex;
+    RegexLayer regexLayer;
     StructuredDocumentParser structuredDocumentParser;
 
     /**
@@ -12,11 +12,14 @@ public abstract class StreamParser {
     StreamParser() {
     }
 
+    void setRegexLayer(RegexLayer regexLayer) {
+        this.regexLayer = regexLayer;
+    }
+
     protected StreamParser(StructuredDocumentParser structuredDocumentParser) {
         builder = new StringBuilder();
         this.structuredDocumentParser = structuredDocumentParser;
         wordParser = structuredDocumentParser.wordParser;
-        semanticRegex = structuredDocumentParser.semanticRegex;
     }
 
     /**
@@ -58,7 +61,7 @@ public abstract class StreamParser {
      * then send it into the GrammarParser directly.
      */
     protected final void truncate(WordParser.WordType type , Object element) {
-        semanticRegex.input(element , type);
+        regexLayer.input(element , type);
         builder.setLength(0);
     }
 
@@ -73,7 +76,7 @@ public abstract class StreamParser {
      * To append a detected word to the GrammarParser.
      */
     protected final void append(String word, WordParser.WordType type) {
-        semanticRegex.input(word, type);
+        regexLayer.input(word, type);
     }
 
     /**
@@ -90,7 +93,7 @@ public abstract class StreamParser {
      * but you have an alternative of the word now.
      */
     protected final void truncate(Object element , WordParser.WordType type) {
-        semanticRegex.input(element , type);
+        regexLayer.input(element , type);
         builder.setLength(0);
     }
 

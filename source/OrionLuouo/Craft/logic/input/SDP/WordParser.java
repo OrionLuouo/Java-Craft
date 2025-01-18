@@ -19,6 +19,10 @@ public class WordParser {
         Object of(String word);
     }
 
+    void setRegexLayer(RegexLayer layer) {
+        this.regexLayer = layer;
+    }
+
     public static final WordType TYPE_STRING = new WordType("String")
             , TYPE_IDENTIFIER = new WordType("Identifier")
             , TYPE_PUNCTUATION = new WordType("Punctuation")
@@ -79,7 +83,7 @@ public class WordParser {
     Map<String , WordType> types;
     List<CouplePair<WordType , FreeTypeChecker>> freeTypes;
     Map<WordType , Map<String , Object>> wordGroups;
-    SemanticRegex semanticRegex;
+    RegexLayer regexLayer;
 
     WordParser() {
         types = new HashMap<>();
@@ -133,7 +137,7 @@ public class WordParser {
             Map.Entry<WordType, Map<String, Object>> entry = iterator.next();
             Object element = entry.getValue().get(word);
             if (element != null) {
-                semanticRegex.input(element , entry.getKey());
+                regexLayer.input(element , entry.getKey());
                 return;
             }
         }
@@ -142,7 +146,7 @@ public class WordParser {
             CouplePair<WordType , FreeTypeChecker> pair = freeTypeIterator.next();
             Object element = pair.valueB().of(word);
             if (element != null) {
-                semanticRegex.input(element , pair.valueA());
+                regexLayer.input(element , pair.valueA());
                 return;
             }
         }

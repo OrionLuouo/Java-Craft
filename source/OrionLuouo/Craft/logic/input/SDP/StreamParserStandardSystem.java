@@ -263,6 +263,19 @@ class BlankStreamParser extends PreAreaStreamParser {
     AreaStreamParser areaAnnotationStreamParser , escapedStringStreamParser;
 
     @Override
+    void setRegexLayer(RegexLayer regexLayer) {
+        this.regexLayer = regexLayer;
+        streamParserStandardSystem.escapeStreamParser.regexLayer = regexLayer;
+        streamParserStandardSystem.escapedStringEndStreamParser.regexLayer = regexLayer;
+        streamParserStandardSystem.escapedStringStreamParser.regexLayer = regexLayer;
+        streamParserStandardSystem.blankStreamParser.regexLayer = regexLayer;
+        streamParserStandardSystem.preAreaAnnotationStreamParser.regexLayer = regexLayer;
+        streamParserStandardSystem.preEscapedStringStreamParser.regexLayer = regexLayer;
+        streamParserStandardSystem.lineAnnotationStreamParser.regexLayer = regexLayer;
+        streamParserStandardSystem.areaAnnotationEndStreamParser.regexLayer = regexLayer;
+    }
+
+    @Override
     void hidePreParsers() {
         lineAnnotationHead = BlankStreamParser.exclude(preLineAnnotationStreamParser.head);
         areaAnnotationEnd = BlankStreamParser.exclude(preAreaAnnotationStreamParser.head);
@@ -325,13 +338,16 @@ class BlankStreamParser extends PreAreaStreamParser {
         if (character >= delimiters.length || !delimiters[character]) {
             builder.append(character);
         }
+        else if (character == '.' && wordParser.getType("Float") != null && builder.toString().matches("[0-9]+")) {
+            builder.append(character);
+        }
         else {
             if (!builder.isEmpty()) {
                 wordParser.input(builder.toString());
                 builder.setLength(0);
             }
             if (character >= blanks.length || !blanks[character]) {
-                semanticRegex.input(character , wordParser.getType("Punctuation"));
+                regexLayer.input(character , wordParser.getType("Punctuation"));
             }
         }
     }
@@ -582,7 +598,7 @@ class EscapedStringStreamParser extends AreaStreamParser {
 
     @Override
     protected void endArea() {
-        semanticRegex.input(stringBuilder.toString() , structuredDocumentParser.wordParser.getType("String"));
+        regexLayer.input(stringBuilder.toString() , structuredDocumentParser.wordParser.getType("String"));
         stringBuilder.setLength(0);
     }
 

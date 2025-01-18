@@ -25,45 +25,21 @@ import java.util.stream.Stream;
 public class StructuredDocumentParser {
     StreamParser streamParser;
     WordParser wordParser;
-    SemanticRegex semanticRegex;
-    RegexCompiler regexCompiler;
+    RegexLayer regexLayer;
 
     public StructuredDocumentParser() {
         wordParser = new WordParser();
-        wordParser.semanticRegex = semanticRegex = new SemanticRegex();
-        regexCompiler = new RegexCompiler(this);
     }
 
-    public void setSemanticRegex(SemanticRegex regex) {
-        semanticRegex = regex;
-        regex.reset();
-    }
-
-    public void setInnerWordType(WordParser.WordType... types) {
-        regexCompiler.setInnerWordType(types);
-    }
-
-    public RegexCompiler regexCompiler() {
-        return new RegexCompiler(regexCompiler);
-    }
-
-    public SemanticRegex compile(String regex) {
-        return regexCompiler().compile(regex);
-    }
-
-    public SemanticRegex compile(String regex , WordParser.WordType... temporaryInnerWordTypes) {
-        RegexCompiler regexCompiler = new RegexCompiler(this.regexCompiler);
-        regexCompiler.setInnerWordType(temporaryInnerWordTypes);
-        return regexCompiler.compile(regex);
-    }
-
-    public void setNicknameOfWordType(WordParser.WordType type , String nickname) {
-        regexCompiler.setNickNameOfWordType(type, nickname);
+    public void setRegexLayer(RegexLayer regexLayer) {
+        this.regexLayer = regexLayer;
+        streamParser.setRegexLayer(regexLayer);
+        wordParser.setRegexLayer(regexLayer);
     }
 
     /**
      * To initialize the StreamParser.<p>
-     * It should only be invoked before functioning.
+     * It should only be invoked before the document parser's functioning.
      *
      * @throws SDPException If this method is invoked twice or more,<p>
      *                      it will throw a SDPException.
